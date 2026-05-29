@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
@@ -16,6 +17,7 @@ class AuthService {
   // Gateway key for Fazpass OTP (different from merchant token)
   final String _gatewayKey = "6ede320b-afb0-4164-9a4f-224a1fe2ceb2";
   String? _otpId;
+  final _otpStorage = const FlutterSecureStorage();
   String? _lastPhone;
 
   // Stream to listen auth state changes
@@ -86,6 +88,8 @@ class AuthService {
         final data = jsonDecode(response.body);
         if (data['status'] == true) {
           _otpId = data['data']['id'];
+          // Persist OTP ID for hot‑reload safety
+          await _otpStorage.write(key: 'otp_id', value: _otpId!);
           return true;
         }
         return false;
@@ -100,7 +104,15 @@ class AuthService {
   }
 
   Future<bool> verifyOTP(String otp) async {
-    if (_otpId == null) return false;
+    if (_otpId == null) {
+      // Try to recover from storage (app reload / hot reload)
+      final stored = await _otpStorage.read(key: 'otp_id');
+      if (stored != null && stored.isNotEmpty) {
+        _otpId = stored;
+      } else {
+        return false;
+      }
+    }
 
     try {
       final response = await http.post(
@@ -117,8 +129,15 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['status'] == true;
+        final success = data['status'] == true;
+        // Clean up stored OTP ID regardless of outcome
+        await _otpStorage.delete(key: 'otp_id');
+        _otpId = null;
+        return success;
       }
+      // Clean up on non‑200 response
+      await _otpStorage.delete(key: 'otp_id');
+      _otpId = null;
       return false;
     } catch (e) {
       debugPrint('Verify Error: $e');

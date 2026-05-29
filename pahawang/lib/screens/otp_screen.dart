@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/colors.dart';
 
@@ -99,16 +101,22 @@ class _OTPScreenState extends State<OTPScreen> {
         return;
       }
 
-      // If OTP valid, complete registration
-      await AuthService().register(
-        name: widget.name,
-        email: widget.email,
-        password: widget.password,
-        phone: widget.phone,
+      // If OTP valid, complete registration in PostgreSQL using AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final registerSuccess = await authProvider.register(
+        widget.name,
+        widget.email,
+        widget.password,
+        widget.phone,
       );
 
-      // Sign out to force login after verification
-      await AuthService().signOut();
+      if (!registerSuccess) {
+        setState(() {
+          _isLoading = false;
+          _error = authProvider.error;
+        });
+        return;
+      }
 
       if (mounted) {
         _showSuccessDialog();

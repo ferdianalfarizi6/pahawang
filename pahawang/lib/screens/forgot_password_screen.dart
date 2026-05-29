@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/colors.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -27,24 +27,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isLoading = true);
 
-    try {
-      await AuthService().sendPasswordResetEmail(email: _emailController.text.trim());
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.sendPasswordReset(_emailController.text.trim());
+
+    if (success) {
       setState(() => _emailSent = true);
-    } on FirebaseAuthException catch (e) {
+    } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Gagal mengirim email reset')),
+          SnackBar(content: Text(authProvider.error ?? 'Gagal mengirim email reset')),
         );
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
+    
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override

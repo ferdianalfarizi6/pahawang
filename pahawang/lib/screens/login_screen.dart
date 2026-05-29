@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/colors.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,58 +33,29 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
 
-    try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
-      await AuthService().signIn(email: email, password: password);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.login(email, password);
 
-      // Check if admin
-      if (email == 'admin@gmail.com') {
-        if (mounted) Navigator.of(context).pushReplacementNamed('/admin_dashboard');
-        return;
-      }
-
-      // Check email verification
-      await AuthService().reloadUser();
-      if (AuthService().currentUser != null && !AuthService().isEmailVerified) {
-        setState(() {
-          _error = 'Email belum diverifikasi. Silakan cek inbox Anda.';
-          _isLoading = false;
-        });
-        // Show resend option
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Email belum diverifikasi'),
-              action: SnackBarAction(
-                label: 'Kirim Ulang',
-                onPressed: () async {
-                  await AuthService().resendVerificationEmail();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Email verifikasi telah dikirim ulang')),
-                    );
-                  }
-                },
-              ),
-            ),
-          );
-        }
-        await AuthService().signOut();
-        return;
-      }
-
+    if (success) {
       if (mounted) {
-          // After successful login, replace current route with home (AuthGate)
+        if (authProvider.isAdmin) {
+          // Direct admin email login redirects straight to Admin Dashboard
+          Navigator.of(context).pushReplacementNamed('/admin_dashboard');
+        } else {
+          // Regular users go to Home Screen
           Navigator.of(context).pushReplacementNamed('/');
         }
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = _getErrorMessage(e.code));
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _error = authProvider.error;
+          _isLoading = false;
+        });
+      }
     }
   }
 

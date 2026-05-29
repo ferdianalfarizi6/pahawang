@@ -1,0 +1,112 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum PaymentStatus {
+  unpaid
+  pending
+  paid
+  cancelled
+}
+
+enum BookingStatus {
+  waiting
+  confirmed
+  completed
+  cancelled
+}
+
+model User {
+  id           String    @id @default(uuid())
+  firebase_uid String    @unique
+  email        String    @unique
+  full_name    String?
+  phone        String?
+  avatar       String?
+  role         Role      @default(user)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  bookings     Booking[]
+
+  @@map("users")
+}
+
+model Villa {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  location        String
+  thumbnail       String
+  gallery         String[]
+  price_per_night Float
+  max_guest       Int
+  available_room  Int
+  facilities      String[]
+  created_at      DateTime  @default(now())
+  bookings        Booking[]
+
+  @@map("villas")
+}
+
+model TourPackage {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  duration    String
+  location    String
+  price       Float
+  quota       Int
+  thumbnail   String
+  gallery     String[]
+  facilities  String[]
+  created_at  DateTime  @default(now())
+  bookings    Booking[]
+
+  @@map("tour_packages")
+}
+
+model Booking {
+  id             String        @id @default(uuid())
+  booking_code   String        @unique
+  user_id        String
+  user           User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  booking_type   String        // "villa" or "package"
+  villa_id       String?
+  villa          Villa?        @relation(fields: [villa_id], references: [id], onDelete: SetNull)
+  package_id     String?
+  package        TourPackage?  @relation(fields: [package_id], references: [id], onDelete: SetNull)
+  check_in       DateTime?
+  check_out      DateTime?
+  total_guest    Int
+  total_price    Float
+  payment_method String
+  payment_status PaymentStatus @default(unpaid)
+  booking_status BookingStatus @default(waiting)
+  created_at     DateTime      @default(now())
+  payments       Payment[]
+
+  @@map("bookings")
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  booking_id     String
+  booking        Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  payment_code   String        @unique
+  amount         Float
+  payment_method String
+  payment_status PaymentStatus @default(unpaid)
+  paid_at        DateTime?
+
+  @@map("payments")
+}

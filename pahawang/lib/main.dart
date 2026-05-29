@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'models/booking_model.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
@@ -23,7 +23,11 @@ import 'screens/admin_login_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/manage_villas_screen.dart';
 import 'screens/booking_management_screen.dart';
-import 'services/auth_service.dart';
+import 'providers/auth_provider.dart';
+import 'providers/villas_provider.dart';
+import 'providers/packages_provider.dart';
+import 'providers/bookings_provider.dart';
+import 'providers/admin_provider.dart';
 import 'utils/colors.dart';
 
 Future<void> main() async {
@@ -37,7 +41,24 @@ Future<void> main() async {
     debugPrint('❌ Firebase initialization error: $e');
     debugPrintStack(stackTrace: stack);
   }
-  runApp(const PulauPahawangApp());
+
+  // Set portrait upward orientation for mobile app layout consistency
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => VillasProvider()),
+        ChangeNotifierProvider(create: (_) => PackagesProvider()),
+        ChangeNotifierProvider(create: (_) => BookingsProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
+      ],
+      child: const PulauPahawangApp(),
+    ),
+  );
 }
 
 class PulauPahawangApp extends StatelessWidget {
@@ -84,22 +105,21 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: AuthService().authStateChanges,
-      builder: (context, snapshot) {
-        // If snapshot is still waiting for data
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    final authProvider = Provider.of<AuthProvider>(context);
 
-        // If user is not logged in, they can stay as guest or go to login
-        // But for consistency with user request, we go to MainNavigation (Guest Mode enabled)
-        // If they need to book, the buttons in screens will check AuthService().isLoggedIn
-        return const MainNavigation();
-      },
-    );
+    if (authProvider.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+      );
+    }
+
+    // Both guest users and authenticated users proceed to main navigation.
+    // Feature components check authProvider.isAuthenticated interactively.
+    return const MainNavigation();
   }
 }
 

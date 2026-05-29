@@ -42,7 +42,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     // Just send OTP and navigate to verification screen
-    final success = await AuthService().sendOTP(_phoneController.text.trim());
+    String rawPhone = _phoneController.text.trim();
+    // Convert local format starting with 0 (e.g., 08xxxx) to international 62xxxx
+    if (rawPhone.startsWith('0')) {
+      rawPhone = '62' + rawPhone.substring(1);
+    }
+    final success = await AuthService().sendOTP(rawPhone);
+    
+    // Store the normalized phone back to controller for later use (OTP screen)
+    _phoneController.text = rawPhone;
     
     setState(() => _isLoading = false);
 
@@ -191,12 +199,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       keyboardType: TextInputType.phone,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) return 'Nomor WA wajib diisi';
-                        if (!value.startsWith('62')) return 'Gunakan format 62xxx';
+                        String trimmed = value.trim();
+                        if (trimmed.startsWith('0')) {
+                          // Convert local 08... to international 62...
+                          trimmed = '62' + trimmed.substring(1);
+                        }
+                        if (!trimmed.startsWith('62')) return 'Gunakan format 62xxx atau 08xxx';
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
-
                     const SizedBox(height: 14),
 
                     // Password field
