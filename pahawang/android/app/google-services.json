@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "856422199421",
+    "project_id": "pmferdian-35cb5",
+    "storage_bucket": "pmferdian-35cb5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856422199421:android:fbf4fb05738b8431328114",
+        "android_client_info": {
+          "package_name": "com.example.pahawang"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7zFuBizOd67GeLh0sid0rsxPslkXdZbI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

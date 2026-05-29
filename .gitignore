@@ -1,0 +1,22 @@
+# Flutter
+pahawang/.dart_tool/
+pahawang/build/
+pahawang/.flutter-plugins
+pahawang/.flutter-plugins-dependencies
+
+# Dart
+pahawang/.packages
+
+# Android
+pahawang/android/.gradle/
+pahawang/android/local.properties
+
+# iOS
+pahawang/ios/Pods/
+
+# NestJS
+backend/node_modules/
+backend/dist/
+
+# VSCode
+.vscode/
