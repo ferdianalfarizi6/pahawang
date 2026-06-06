@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../utils/error_handler.dart';
 import '../core/dio_client.dart';
 import '../models/booking_model.dart';

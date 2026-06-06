@@ -1,29 +1,10 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  admin
-  user
-}
-
-enum PaymentStatus {
-  unpaid
-  pending
-  paid
-  cancelled
-}
-
-enum BookingStatus {
-  waiting
-  confirmed
-  completed
-  cancelled
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -79,12 +60,9 @@ model Booking {
   id             String        @id @default(uuid())
   booking_code   String        @unique
   user_id        String
-  user           User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  booking_type   String        // "villa" or "package"
+  booking_type   String
   villa_id       String?
-  villa          Villa?        @relation(fields: [villa_id], references: [id], onDelete: SetNull)
   package_id     String?
-  package        TourPackage?  @relation(fields: [package_id], references: [id], onDelete: SetNull)
   check_in       DateTime?
   check_out      DateTime?
   total_guest    Int
@@ -93,6 +71,9 @@ model Booking {
   payment_status PaymentStatus @default(unpaid)
   booking_status BookingStatus @default(waiting)
   created_at     DateTime      @default(now())
+  package        TourPackage?  @relation(fields: [package_id], references: [id])
+  user           User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  villa          Villa?        @relation(fields: [villa_id], references: [id])
   payments       Payment[]
 
   @@map("bookings")
@@ -101,12 +82,31 @@ model Booking {
 model Payment {
   id             String        @id @default(uuid())
   booking_id     String
-  booking        Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   payment_code   String        @unique
   amount         Float
   payment_method String
   payment_status PaymentStatus @default(unpaid)
   paid_at        DateTime?
+  booking        Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum PaymentStatus {
+  unpaid
+  pending
+  paid
+  cancelled
+}
+
+enum BookingStatus {
+  waiting
+  confirmed
+  completed
+  cancelled
 }

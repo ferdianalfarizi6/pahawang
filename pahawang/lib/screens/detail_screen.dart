@@ -6,6 +6,7 @@ import '../models/villa_model.dart';
 import '../models/package_model.dart';
 import '../models/destination_model.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/premium_card.dart';
 
 class DetailScreen extends StatelessWidget {
   final Villa? villa;
@@ -31,42 +32,53 @@ class DetailScreen extends StatelessWidget {
     final facilities = isDestination ? <String>[] : (isVilla ? villa!.facilities : package!.facilities);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
           // Hero Header Image & Controls
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 320,
             pinned: true,
+            stretch: true,
             leading: IconButton(
               onPressed: () => Navigator.pop(context),
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.black.withOpacity(0.4),
+                  shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
               ),
             ),
             actions: [
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ditambahkan ke Wishlist')),
+                    SnackBar(
+                      content: Text('${isDestination ? "Destinasi" : (isVilla ? "Villa" : "Paket")} ditambahkan ke Wishlist!'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: AppColors.success,
+                    ),
                   );
                 },
                 icon: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.black.withOpacity(0.4),
+                    shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.favorite_border_rounded, color: Colors.white),
+                  child: const Icon(Icons.favorite_border_rounded, color: Colors.white, size: 20),
                 ),
               ),
               const SizedBox(width: 16),
             ],
             flexibleSpace: FlexibleSpaceBar(
+              stretchModes: const [
+                StretchMode.zoomBackground,
+                StretchMode.blurBackground,
+              ],
               background: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -89,10 +101,11 @@ class DetailScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
+                          Colors.black.withOpacity(0.6),
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          Colors.black.withOpacity(0.8),
                         ],
-                        begin: Alignment.center,
+                        begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
                     ),
@@ -108,13 +121,13 @@ class DetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              transform: Matrix4.translationValues(0, -24, 0),
+              transform: Matrix4.translationValues(0, -28, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title & Price Info
+                  // Title & Location Header
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -126,15 +139,15 @@ class DetailScreen extends StatelessWidget {
                               name,
                               style: AppTheme.heading1.copyWith(fontSize: 22, height: 1.2),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 16),
-                                const SizedBox(width: 4),
+                                const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 16),
+                                const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     location,
-                                    style: AppTheme.caption.copyWith(fontSize: 12),
+                                    style: AppTheme.caption.copyWith(fontSize: 12, fontWeight: FontWeight.bold),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -142,7 +155,7 @@ class DetailScreen extends StatelessWidget {
                               ],
                             ),
                             if (isDestination) ...[
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
                                   const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
@@ -153,9 +166,9 @@ class DetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.1),
+                                      color: AppColors.primary.withOpacity(0.08),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -163,7 +176,7 @@ class DetailScreen extends StatelessWidget {
                                       style: const TextStyle(
                                         color: AppColors.primary,
                                         fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
@@ -176,9 +189,9 @@ class DetailScreen extends StatelessWidget {
                       if (!isDestination) ...[
                         const SizedBox(width: 12),
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.08),
+                            color: (isVilla ? AppColors.primary : AppColors.accent).withOpacity(0.08),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Column(
@@ -186,15 +199,19 @@ class DetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 isVilla ? 'Per Malam' : 'Per Orang',
-                                style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: isVilla ? AppColors.primary : AppColors.accent,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text(
                                 _formatPrice(price),
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                style: TextStyle(
+                                  color: isVilla ? AppColors.primary : AppColors.accent,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ],
@@ -203,37 +220,41 @@ class DetailScreen extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const Divider(height: 36, color: Color(0xFFF1F3F5)),
 
                   // Description
-                  Text('Deskripsi Lengkap', style: AppTheme.heading3),
-                  const SizedBox(height: 8),
+                  Text('Deskripsi Lengkap', style: AppTheme.heading2),
+                  const SizedBox(height: 10),
                   Text(
                     description,
-                    style: AppTheme.bodyText.copyWith(height: 1.5),
+                    style: AppTheme.bodyText.copyWith(height: 1.6),
                     textAlign: TextAlign.justify,
                   ),
                   const SizedBox(height: 24),
 
                   // Gallery Horizontal Preview
                   if (gallery.isNotEmpty) ...[
-                    Text('Galeri Foto', style: AppTheme.heading3),
+                    Text('Galeri Foto', style: AppTheme.heading2),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 110,
+                      height: 120,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
                         itemCount: gallery.length,
                         itemBuilder: (context, index) {
                           return Container(
-                            width: 150,
+                            width: 160,
                             margin: const EdgeInsets.only(right: 12),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                               child: Image.network(
                                 gallery[index],
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade200),
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.image, color: Colors.grey),
+                                ),
                               ),
                             ),
                           );
@@ -242,9 +263,10 @@ class DetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                   ],
+
                   // Facilities Wrap list
                   if (facilities.isNotEmpty) ...[
-                    Text('Fasilitas Lengkap', style: AppTheme.heading3),
+                    Text('Fasilitas Lengkap', style: AppTheme.heading2),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
@@ -261,7 +283,7 @@ class DetailScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.accent.withOpacity(0.06),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: AppColors.accent.withOpacity(0.12),
                         ),
@@ -269,14 +291,21 @@ class DetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Text('📌 ', style: TextStyle(fontSize: 18)),
-                              SizedBox(width: 6),
-                              Text('Informasi Penting', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)),
+                              const Text('📌 ', style: TextStyle(fontSize: 16)),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Informasi Penting',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.accent.withOpacity(0.9),
+                                  fontSize: 13,
+                                ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                           _buildTip(isVilla
                               ? 'Waktu Check-In mulai pukul 14:00 WIB dan Check-Out maksimal 12:00 WIB.'
                               : 'Wajib tiba di Dermaga Ketapang 30 menit sebelum jadwal keberangkatan perahu.'),
@@ -286,56 +315,34 @@ class DetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Checkout Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          final auth = Provider.of<AuthProvider>(context, listen: false);
-                          if (!auth.isAuthenticated) {
-                            // BUSINESS RULE: Guest cannot checkout without logging in
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Silakan login terlebih dahulu untuk melakukan pemesanan.'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                            Navigator.pushNamed(context, '/login');
-                            return;
-                          }
-
-                          // Navigate to dynamic booking checkout screen
-                          Navigator.pushNamed(
-                            context,
-                            '/booking_form',
-                            arguments: {
-                              'villa': villa,
-                              'package': package,
-                            },
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.shopping_cart_checkout_rounded, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Pesan Sekarang',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    // Checkout Action Button using custom PremiumButton
+                    PremiumButton(
+                      text: 'Pesan Sekarang',
+                      icon: Icons.shopping_cart_checkout_rounded,
+                      isSecondary: !isVilla,
+                      onPressed: () {
+                        final auth = Provider.of<AuthProvider>(context, listen: false);
+                        if (!auth.isAuthenticated) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Silakan login terlebih dahulu untuk melakukan pemesanan.'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.redAccent,
                             ),
-                          ],
-                        ),
-                      ),
+                          );
+                          Navigator.pushNamed(context, '/login');
+                          return;
+                        }
+
+                        Navigator.pushNamed(
+                          context,
+                          '/booking_form',
+                          arguments: {
+                            'villa': villa,
+                            'package': package,
+                          },
+                        );
+                      },
                     ),
                   ],
                 ],
@@ -351,13 +358,13 @@ class DetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade100),
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textMedium),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMedium),
       ),
     );
   }

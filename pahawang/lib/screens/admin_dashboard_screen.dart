@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/colors.dart';
+import '../utils/theme.dart';
 import '../models/booking_model.dart';
+import '../widgets/premium_card.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -40,13 +42,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Dashboard Admin',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        backgroundColor: AppColors.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: AppColors.primaryGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white),
@@ -55,20 +67,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Keluar dari Akun'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  title: const Text('Keluar dari Akun', style: TextStyle(fontWeight: FontWeight.bold)),
                   content: const Text('Apakah Anda yakin ingin keluar dari akun Admin?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Batal'),
+                      child: const Text('Batal', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppColors.danger,
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Keluar'),
+                      child: const Text('Keluar', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -84,7 +98,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
-      backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: _refreshStats,
         color: AppColors.primary,
@@ -101,50 +114,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.error_outline_rounded, size: 64, color: Colors.redAccent),
+                          const Icon(Icons.error_outline_rounded, size: 64, color: AppColors.danger),
                           const SizedBox(height: 16),
                           Text(
                             'Gagal memuat data dashboard:\n${adminProvider.error}',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16, color: AppColors.textMedium),
+                            style: const TextStyle(fontSize: 14, color: AppColors.textMedium, height: 1.4),
                           ),
                           const SizedBox(height: 24),
-                          ElevatedButton.icon(
+                          PremiumButton(
+                            text: 'Coba Lagi',
+                            icon: Icons.refresh_rounded,
+                            width: 160,
                             onPressed: _refreshStats,
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Coba Lagi'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            ),
                           ),
                         ],
                       ),
                     ),
                   )
                 : SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Welcome Banner Widget
+                        // Welcome Banner
                         _buildWelcomeBanner(authProvider.user?.fullName ?? 'Administrator'),
 
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Quick Navigation Actions
-                              const SizedBox(height: 8),
-                              const Text(
+                              const SizedBox(height: 12),
+                              Text(
                                 'Akses Cepat',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
-                                ),
+                                style: AppTheme.heading2,
                               ),
                               const SizedBox(height: 12),
                               Row(
@@ -154,7 +159,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       context,
                                       Icons.holiday_village_rounded,
                                       'Kelola Villa',
-                                      'Atur akomodasi & fasilitas',
+                                      'Akomodasi & Fasilitas',
                                       AppColors.primary,
                                       '/manage_villas',
                                     ),
@@ -165,7 +170,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       context,
                                       Icons.list_alt_rounded,
                                       'Pesanan',
-                                      'Manajemen booking & bayar',
+                                      'Manajemen Booking',
                                       AppColors.accent,
                                       '/booking_management',
                                     ),
@@ -173,50 +178,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 ],
                               ),
 
-                              // Key Metrics KPIs Grid
+                              // Key Metrics Grid
                               const SizedBox(height: 24),
-                              const Text(
+                              Text(
                                 'Statistik Kunci',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
-                                ),
+                                style: AppTheme.heading2,
                               ),
                               const SizedBox(height: 12),
                               _buildStatsGrid(adminProvider.stats),
 
-                              // Recent Bookings (Last 5)
+                              // Recent Bookings
                               const SizedBox(height: 24),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Pemesanan Terbaru',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textDark,
-                                    ),
+                                    style: AppTheme.heading2,
                                   ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pushNamed(context, '/booking_management'),
-                                    child: const Text('Lihat Semua'),
+                                  GestureDetector(
+                                    onTap: () => Navigator.pushNamed(context, '/booking_management'),
+                                    child: const Text(
+                                      'Lihat Semua',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               _buildRecentBookingsList(adminProvider.recentBookings),
 
                               // Recent Payments
                               const SizedBox(height: 24),
-                              const Text(
+                              Text(
                                 'Pembayaran Terbaru',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
-                                ),
+                                style: AppTheme.heading2,
                               ),
                               const SizedBox(height: 12),
                               _buildRecentPaymentsList(adminProvider.recentPayments),
@@ -234,20 +234,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildWelcomeBanner(String adminName) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryLight],
+          colors: AppColors.primaryGradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: AppColors.primary.withOpacity(0.18),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           )
         ],
       ),
@@ -258,10 +258,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: Colors.white.withOpacity(0.2),
+                backgroundColor: Colors.white.withOpacity(0.18),
                 child: const Icon(Icons.admin_panel_settings_rounded, size: 28, color: Colors.white),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +269,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Text(
                       'Selamat Datang,',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white.withOpacity(0.8),
                       ),
                     ),
@@ -278,7 +279,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -292,9 +293,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Text(
             'Kelola villa, awasi pesanan masuk, dan pantau performa bisnis dari satu dashboard terpusat.',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: Colors.white.withOpacity(0.9),
-              height: 1.4,
+              height: 1.5,
             ),
           ),
         ],
@@ -311,23 +312,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     String route,
   ) {
     return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
+      height: 125,
+      decoration: AppTheme.cardDecoration,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => Navigator.pushNamed(context, route),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -336,7 +327,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: color.withOpacity(0.1),
+                  backgroundColor: color.withOpacity(0.08),
                   child: Icon(icon, color: color, size: 20),
                 ),
                 Column(
@@ -345,18 +336,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textDark,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       desc,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textLight,
                       ),
                     ),
@@ -373,14 +365,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildStatsGrid(Map<String, dynamic> stats) {
     final revenue = stats['totalRevenue'] ?? 0;
     final bookings = stats['totalBookings'] ?? 0;
-    final active = stats['activeBookings'] ?? 0;
-    final users = stats['totalUsers'] ?? 0;
+    final pending = stats['pendingBookings'] ?? 0;
+    final paid = stats['paidBookings'] ?? 0;
 
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.35,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       children: [
@@ -391,22 +383,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           AppColors.success,
         ),
         _buildStatCard(
-          'Total Pesanan',
+          'Total Booking',
           '$bookings',
           Icons.shopping_bag_rounded,
           AppColors.primary,
         ),
         _buildStatCard(
-          'Pesanan Aktif',
-          '$active',
-          Icons.pending_actions_rounded,
+          'Pending Booking',
+          '$pending',
+          Icons.hourglass_empty_rounded,
           AppColors.warning,
         ),
         _buildStatCard(
-          'Jumlah Pengguna',
-          '$users',
-          Icons.people_alt_rounded,
-          Colors.purple,
+          'Paid Booking',
+          '$paid',
+          Icons.check_circle_outline_rounded,
+          AppColors.success,
         ),
       ],
     );
@@ -414,18 +406,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -433,15 +415,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textLight,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textLight,
+                  ),
                 ),
               ),
-              Icon(icon, size: 20, color: color),
+              Icon(icon, size: 18, color: color),
             ],
           ),
           Text(
@@ -449,8 +435,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
               color: AppColors.textDark,
             ),
           ),
@@ -463,18 +449,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (bookings.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        decoration: AppTheme.cardDecoration,
         child: const Column(
           children: [
             Icon(Icons.shopping_cart_checkout_rounded, size: 40, color: AppColors.textLight),
-            SizedBox(height: 8),
+            SizedBox(height: 10),
             Text(
               'Belum ada pemesanan terbaru',
-              style: TextStyle(color: AppColors.textLight, fontSize: 13),
+              style: TextStyle(color: AppColors.textLight, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -485,7 +468,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: bookings.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final booking = bookings[index];
         final type = booking.bookingType;
@@ -494,22 +477,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             : (booking.packageName ?? 'Paket Wisata');
 
         return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              )
-            ],
-          ),
+          decoration: AppTheme.cardDecoration,
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             title: Text(
               assetName,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,13 +490,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Code: ${booking.bookingCode}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textLight, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   'User: ${booking.userEmail ?? booking.userId}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMedium),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMedium, fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     _buildStatusChip(booking.bookingStatus, true),
@@ -535,10 +508,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             trailing: Text(
               _formatRupiah(booking.totalPrice),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-                fontSize: 14,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: type == 'villa' ? AppColors.primary : AppColors.accent,
+                fontSize: 13,
               ),
             ),
             onTap: () {
@@ -558,18 +531,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (payments.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        decoration: AppTheme.cardDecoration,
         child: const Column(
           children: [
             Icon(Icons.payment_rounded, size: 40, color: AppColors.textLight),
-            SizedBox(height: 8),
+            SizedBox(height: 10),
             Text(
               'Belum ada pembayaran terbaru',
-              style: TextStyle(color: AppColors.textLight, fontSize: 13),
+              style: TextStyle(color: AppColors.textLight, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -580,7 +550,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: payments.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final payment = payments[index];
         final booking = payment['booking'] ?? {};
@@ -594,27 +564,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             : '-';
 
         return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              )
-            ],
-          ),
+          decoration: AppTheme.cardDecoration,
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            leading: CircleAvatar(
-              radius: 20,
-              backgroundColor: AppColors.success.withOpacity(0.1),
-              child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 22),
             ),
             title: Text(
               bookingCode,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,24 +585,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Oleh: $fullName',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMedium),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMedium, fontWeight: FontWeight.w500),
                 ),
                 Text(
-                  'Metode: $paymentMethod',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textLight),
-                ),
-                Text(
-                  'Waktu: $paidAtStr',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textLight),
+                  'Metode: $paymentMethod  |  $paidAtStr',
+                  style: const TextStyle(fontSize: 10, color: AppColors.textLight, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             trailing: Text(
               _formatRupiah(amount),
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 color: AppColors.success,
-                fontSize: 14,
+                fontSize: 13,
               ),
             ),
           ),
@@ -667,7 +626,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           label = 'Selesai';
           break;
         case 'cancelled':
-          color = Colors.red;
+          color = AppColors.danger;
           label = 'Dibatalkan';
           break;
         default:
@@ -676,7 +635,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     } else {
       switch (status.toLowerCase()) {
         case 'unpaid':
-          color = Colors.redAccent;
+          color = AppColors.danger;
           label = 'Belum Bayar';
           break;
         case 'paid':
@@ -695,13 +654,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.15)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.bold,
           color: color,
         ),

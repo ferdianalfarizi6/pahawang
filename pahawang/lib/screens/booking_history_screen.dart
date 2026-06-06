@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../utils/colors.dart';
 import '../utils/theme.dart';
-import '../models/booking_model.dart';
 import '../providers/bookings_provider.dart';
 import 'booking_detail_screen.dart';
 

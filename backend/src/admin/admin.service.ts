@@ -23,6 +23,8 @@ export class AdminService {
       totalUsers,
       totalVillas,
       totalPackages,
+      pendingBookings,
+      paidBookings,
     ] = await Promise.all([
       this.prisma.booking.count(),
       this.prisma.booking.count({
@@ -33,6 +35,12 @@ export class AdminService {
       this.prisma.user.count({ where: { role: 'user' as any } }),
       this.prisma.villa.count(),
       this.prisma.tourPackage.count(),
+      this.prisma.booking.count({
+        where: { payment_status: 'pending' as PaymentStatusType },
+      }),
+      this.prisma.booking.count({
+        where: { payment_status: 'paid' as PaymentStatusType },
+      }),
     ]);
 
     // Recent Bookings (last 5)
@@ -73,6 +81,8 @@ export class AdminService {
         totalUsers,
         totalVillas,
         totalPackages,
+        pendingBookings,
+        paidBookings,
       },
       recentBookings,
       recentPayments,

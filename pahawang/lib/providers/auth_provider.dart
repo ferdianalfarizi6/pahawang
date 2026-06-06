@@ -35,20 +35,47 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final cachedToken = await _storage.read(key: 'auth_token');
-      if (cachedToken != null) {
+      if (cachedToken == 'admin_token') {
         _token = cachedToken;
-        // Verify cached session token via NestJS backend call
         final response = await _dio.get('/auth/profile');
         if (response.statusCode == 200) {
           _user = UserModel.fromJson(response.data);
-          debugPrint('✅ Restored session for user: ${_user?.email}');
+          debugPrint('✅ Restored admin bypass session: ${_user?.email}');
         } else {
+          await logout();
+        }
+      } else {
+        // Firebase user session recovery
+        final fbUser = _auth.currentUser;
+        if (fbUser != null) {
+          if (fbUser.emailVerified) {
+            // Get fresh ID token (false to get cached if valid, or auto‑refresh if expired)
+            final idToken = await fbUser.getIdToken(false);
+            if (idToken != null) {
+              _token = idToken;
+              await _storage.write(key: 'auth_token', value: idToken);
+              
+              final response = await _dio.get('/auth/profile');
+              if (response.statusCode == 200) {
+                _user = UserModel.fromJson(response.data);
+                debugPrint('✅ Restored Firebase session: ${_user?.email}');
+              } else {
+                await logout();
+              }
+            } else {
+              await logout();
+            }
+          } else {
+            // User logged in but email not verified
+            await logout();
+          }
+        } else {
+          // No active user session
           await logout();
         }
       }
     } catch (e) {
       debugPrint('⚠️ Session restoration failed: $e');
-      _error = ErrorHandler.getErrorMessage(e);
       await logout();
     } finally {
       _isLoading = false;
@@ -91,8 +118,8 @@ class AuthProvider with ChangeNotifier {
         throw Exception('Email belum diverifikasi. Silakan cek inbox/spam Anda.');
       }
 
-      // 2. Fetch Firebase ID Token
-      final idToken = await fbUser.getIdToken() ?? '';
+      // 2. Fetch Firebase ID Token (forced refresh)
+      final idToken = await fbUser.getIdToken(true) ?? '';
 
       // 3. Register or Retrieve user profile in PostgreSQL database via NestJS
       final response = await _dio.post(
@@ -127,7 +154,62 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Register
+  // Login after email verification reload
+  Future<bool> loginAfterVerification() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final fbUser = _auth.currentUser;
+      if (fbUser == null) {
+        throw Exception('Tidak ada pengguna Firebase yang aktif. Silakan masuk kembali.');
+      }
+
+      // Reload user data to check email verification status
+      await fbUser.reload();
+
+      if (!fbUser.emailVerified) {
+        throw Exception('Email belum diverifikasi. Silakan cek inbox/spam Anda.');
+      }
+
+      // Fetch Firebase ID Token
+      final idToken = await fbUser.getIdToken(true) ?? '';
+
+      // Register or Retrieve user profile in PostgreSQL database via NestJS
+      final response = await _dio.post(
+        '/auth/firebase-login',
+        options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        _user = UserModel.fromJson(response.data);
+        _token = idToken;
+        
+        // Save token to secure storage
+        await _storage.write(key: 'auth_token', value: idToken);
+        await _storage.write(key: 'user_role', value: _user!.role);
+        debugPrint('✅ Logged in successfully after email verification: ${_user?.email} as ${_user?.role}');
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        throw Exception('Gagal melakukan sinkronisasi dengan server.');
+      }
+    } catch (e) {
+      if (e is fb.FirebaseAuthException) {
+        _error = _getFirebaseErrorMessage(e.code);
+      } else {
+        _error = ErrorHandler.getErrorMessage(e);
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Register (Firebase Auth Creation Only)
   Future<bool> register(String name, String email, String password, String phone) async {
     _isLoading = true;
     _error = null;
@@ -144,14 +226,6 @@ class AuthProvider with ChangeNotifier {
       await fbUser.updateDisplayName(name);
       await fbUser.sendEmailVerification();
 
-      // 3. Register user directly into PostgreSQL database via NestJS auth login
-      final idToken = await fbUser.getIdToken() ?? '';
-      await _dio.post(
-        '/auth/firebase-login',
-        data: {'phone': phone},
-        options: Options(headers: {'Authorization': 'Bearer $idToken'}),
-      );
-
       _isLoading = false;
       notifyListeners();
       return true;
@@ -161,6 +235,51 @@ class AuthProvider with ChangeNotifier {
       } else {
         _error = ErrorHandler.getErrorMessage(e);
       }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Finalize Registration (Sync with NestJS and Save Session) after OTP is verified
+  Future<bool> finalizeRegistration(String phone) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final fbUser = _auth.currentUser;
+      if (fbUser == null) {
+        throw Exception('Pengguna Firebase tidak ditemukan. Silakan daftarkan kembali.');
+      }
+
+      // Fetch fresh Firebase ID Token
+      final idToken = await fbUser.getIdToken(true) ?? '';
+
+      // Register or Retrieve user profile in PostgreSQL database via NestJS
+      final response = await _dio.post(
+        '/auth/firebase-login',
+        data: {'phone': phone},
+        options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        _user = UserModel.fromJson(response.data);
+        _token = idToken;
+        
+        // Save token to secure storage
+        await _storage.write(key: 'auth_token', value: idToken);
+        await _storage.write(key: 'user_role', value: _user!.role);
+        debugPrint('✅ Registration finalized successfully: ${_user?.email} as ${_user?.role}');
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        throw Exception('Gagal melakukan sinkronisasi dengan server database.');
+      }
+    } catch (e) {
+      _error = ErrorHandler.getErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -220,7 +339,7 @@ class AuthProvider with ChangeNotifier {
       case 'weak-password':
         return 'Password terlalu lemah (minimal 6 karakter)';
       default:
-        return 'Autentikasi gagal. Silakan coba lagi.';
+        return 'Autentikasi gagal ($code). Silakan coba lagi.';
     }
   }
 }

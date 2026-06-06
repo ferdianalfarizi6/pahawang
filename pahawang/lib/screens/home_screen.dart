@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../utils/colors.dart';
 import '../utils/theme.dart';
 import '../utils/constants.dart';
 import '../models/destination_model.dart';
 import '../models/benefit_model.dart';
+import '../providers/villas_provider.dart';
+import '../providers/packages_provider.dart';
+import '../widgets/premium_card.dart';
+import '../widgets/premium_feedback.dart';
 import 'detail_screen.dart';
 import 'benefit_screen.dart';
 import '../services/auth_service.dart';
@@ -16,8 +20,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   int _currentBannerIndex = 0;
@@ -51,19 +54,25 @@ class _HomeScreenState extends State<HomeScreen>
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(_controller);
     _controller.forward();
 
+    // Trigger dynamic fetch on load for Villa & Tour packages
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<VillasProvider>(context, listen: false).fetchVillas();
+      Provider.of<PackagesProvider>(context, listen: false).fetchPackages();
+    });
+
     Future.delayed(const Duration(milliseconds: 500), () {
       _startBannerAutoSlide();
     });
   }
 
   void _startBannerAutoSlide() {
-    Future.delayed(const Duration(seconds: 4), () {
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         _currentBannerIndex = (_currentBannerIndex + 1) % _banners.length;
         _pageController.animateToPage(
           _currentBannerIndex,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
         );
         _startBannerAutoSlide();
       }
@@ -77,41 +86,55 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  String _formatPrice(double price) {
+    return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
           slivers: [
-            // App Bar
+            // Premium App Bar
             SliverAppBar(
-              expandedHeight: 60,
+              expandedHeight: 70,
               floating: true,
               pinned: false,
               backgroundColor: Colors.transparent,
               elevation: 0,
               flexibleSpace: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
+                alignment: Alignment.center,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [AppColors.primary, AppColors.primaryLight],
+                              colors: AppColors.primaryGradient,
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: const Icon(
                             Icons.waves_rounded,
                             color: Colors.white,
-                            size: 22,
+                            size: 20,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -121,11 +144,12 @@ class _HomeScreenState extends State<HomeScreen>
                               style: AppTheme.heading3.copyWith(
                                 color: AppColors.primary,
                                 fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
-                              'Desa Wisata',
-                              style: AppTheme.caption.copyWith(fontSize: 10),
+                              'Desa Wisata Premium',
+                              style: AppTheme.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -133,28 +157,13 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     Row(
                       children: [
-                        IconButton(
+                        _buildHeaderIconButton(
+                          icon: Icons.search_rounded,
                           onPressed: () => _showSearchDialog(),
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.search_rounded,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                          ),
                         ),
-                        IconButton(
+                        const SizedBox(width: 8),
+                        _buildHeaderIconButton(
+                          icon: AuthService().isLoggedIn ? Icons.person_rounded : Icons.login_rounded,
                           onPressed: () {
                             if (AuthService().isLoggedIn) {
                               Navigator.pushNamed(context, '/profile');
@@ -162,26 +171,6 @@ class _HomeScreenState extends State<HomeScreen>
                               Navigator.pushNamed(context, '/login');
                             }
                           },
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              AuthService().isLoggedIn
-                                  ? Icons.person_rounded
-                                  : Icons.login_rounded,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                          ),
                         ),
                       ],
                     ),
@@ -190,54 +179,107 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
 
-            // Hero Banner
+            // Hero Banner Slider
             SliverToBoxAdapter(
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                  child: SizedBox(
-                    height: 200,
-                    child: PageView.builder(
-                      controller: _pageController,
-                      onPageChanged: (index) {
-                        setState(() => _currentBannerIndex = index);
-                      },
-                      itemCount: _banners.length,
-                      itemBuilder: (context, index) {
-                        return _buildBannerCard(_banners[index]);
-                      },
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 200,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          onPageChanged: (index) {
+                            setState(() => _currentBannerIndex = index);
+                          },
+                          itemCount: _banners.length,
+                          itemBuilder: (context, index) {
+                            return _buildBannerCard(_banners[index]);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_banners.length, (index) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentBannerIndex == index ? 24 : 8,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _currentBannerIndex == index
+                                  ? AppColors.primary
+                                  : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Elegant Quick Search Trigger Section
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: GestureDetector(
+                  onTap: _showSearchDialog,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppColors.premiumShadow,
+                      border: Border.all(color: Colors.grey.shade100),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search_rounded, color: AppColors.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Mau liburan ke mana?',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              Text(
+                                'Cari akomodasi villa atau paket wisata snorkeling...',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 16),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
 
-            // Banner Dots
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_banners.length, (index) {
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentBannerIndex == index ? 24 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _currentBannerIndex == index
-                            ? AppColors.primary
-                            : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-
-            // Quick Stats
+            // Quick Stats Metric Dashboard style
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -245,222 +287,72 @@ class _HomeScreenState extends State<HomeScreen>
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryLight],
+                      colors: AppColors.primaryGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
+                        color: AppColors.primary.withOpacity(0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildQuickStat('⭐', '4.8', 'Rating'),
-                      _buildQuickStat('👥', '10K+', 'Pengunjung'),
-                      _buildQuickStat('📸', '50+', 'Spot Foto'),
-                      _buildQuickStat('🏆', '#1', 'Lampung'),
+                      _buildQuickStat('⭐', '4.9', 'Peringkat'),
+                      _buildQuickStat('👥', '12K+', 'Pengunjung'),
+                      _buildQuickStat('📸', '80+', 'Spot Foto'),
+                      _buildQuickStat('🏆', '#1', 'Destinasi'),
                     ],
                   ),
                 ),
               ),
             ),
 
+            // Section: Villa & Penginapan Carousel
+            SliverToBoxAdapter(
+              child: _buildSectionHeader(
+                title: '🏡 Penginapan Terpopuler',
+                onViewAll: () {},
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildVillaCarousel(),
+            ),
+
+            // Section: Paket Wisata Carousel
+            SliverToBoxAdapter(
+              child: _buildSectionHeader(
+                title: '🎒 Paket Wisata Seru',
+                onViewAll: () {},
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildPackageCarousel(),
+            ),
+
             // Section: Destinasi Populer
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Destinasi Populer', style: AppTheme.heading2),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Lihat Semua',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              child: _buildSectionHeader(
+                title: '✨ Destinasi Pilihan',
+                onViewAll: () {},
               ),
             ),
-
-            // Popular Destinations Horizontal List
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: 220,
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: destinations.length,
-                  itemBuilder: (context, index) {
-                    final dest = destinations[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DetailScreen(destination: dest),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 180,
-                        margin: EdgeInsets.only(
-                          right: index < destinations.length - 1 ? 16 : 0,
-                        ),
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      Image.network(
-                                        dest.imageUrl,
-                                        fit: BoxFit.cover,
-                                        loadingBuilder:
-                                            (context, child, loadingProgress) {
-                                          if (loadingProgress == null) return child;
-                                          return Container(
-                                            color: Colors.grey.shade200,
-                                            child: const Center(
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Container(
-                                            color: AppColors.primaryLight,
-                                            child: const Icon(
-                                              Icons.image_not_supported_rounded,
-                                              color: Colors.white,
-                                              size: 40,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.9),
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.star_rounded,
-                                                color: Colors.amber,
-                                                size: 14,
-                                              ),
-                                              const SizedBox(width: 2),
-                                              Text(
-                                                dest.rating.toString(),
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 8,
-                                        left: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary
-                                                .withOpacity(0.85),
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Text(
-                                            dest.category,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      dest.name,
-                                      style: AppTheme.heading3.copyWith(
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      dest.description,
-                                      style: AppTheme.caption,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              child: _buildDestinationsGrid(),
             ),
 
-            // Section: Tentang Pulau Pahawang
+            // Section: Info Destinasi
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                 child: Text('Tentang Pulau Pahawang', style: AppTheme.heading2),
               ),
             ),
-
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -475,26 +367,26 @@ class _HomeScreenState extends State<HomeScreen>
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
                               Icons.info_rounded,
                               color: AppColors.primary,
-                              size: 24,
+                              size: 22,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Info Destinasi',
+                            'Informasi Pulau',
                             style: AppTheme.heading3,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       Text(
                         AppConstants.islandDescription,
-                        style: AppTheme.bodyText,
+                        style: AppTheme.bodyText.copyWith(height: 1.6),
                         textAlign: TextAlign.justify,
                       ),
                       const SizedBox(height: 16),
@@ -502,12 +394,11 @@ class _HomeScreenState extends State<HomeScreen>
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _buildChip('🏖️ Pantai', AppColors.primaryLight),
-                          _buildChip('🤿 Snorkeling', AppColors.primary),
-                          _buildChip('🌅 Sunset', AppColors.accent),
-                          _buildChip('🐠 Diving', AppColors.primaryDark),
-                          _buildChip('⛺ Camping', AppColors.success),
-                          _buildChip('🎣 Mancing', Colors.purple),
+                          _buildChip('🏖️ Pantai Pasir Putih', AppColors.primaryLight),
+                          _buildChip('🤿 Snorkeling Spot', AppColors.primary),
+                          _buildChip('🌅 Sunset View', AppColors.accent),
+                          _buildChip('🐠 Clownfish Breeding', AppColors.primaryDark),
+                          _buildChip('⛺ Glamping', AppColors.success),
                         ],
                       ),
                     ],
@@ -518,90 +409,23 @@ class _HomeScreenState extends State<HomeScreen>
 
             // Section: Benefit
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Kenapa Harus Kesini?', style: AppTheme.heading2),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const BenefitScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Lihat Semua',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+              child: _buildSectionHeader(
+                title: 'Keunggulan Wisata Kami',
+                onViewAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BenefitScreen(),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
-
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: 4,
-                  itemBuilder: (context, index) {
-                    final benefit = benefits[index];
-                    return Container(
-                      decoration: AppTheme.cardDecoration,
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: benefit.color.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              benefit.icon,
-                              color: benefit.color,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            benefit.title,
-                            style: AppTheme.heading3.copyWith(fontSize: 13),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            benefit.description,
-                            style: AppTheme.caption.copyWith(fontSize: 10),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+              child: _buildBenefitsGrid(),
             ),
 
-            // CTA Section
+            // CTA Booking Section
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -609,26 +433,25 @@ class _HomeScreenState extends State<HomeScreen>
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.accent, AppColors.accentLight],
+                      colors: AppColors.sunsetGradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.accent.withOpacity(0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
+                        color: AppColors.accent.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        '🏝️',
-                        style: TextStyle(fontSize: 40),
-                      ),
+                      const Text('🏝️', style: TextStyle(fontSize: 48)),
                       const SizedBox(height: 12),
                       const Text(
-                        'Siap Berwisata?',
+                        'Rencanakan Liburan Anda!',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -636,17 +459,20 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Pesan tiket sekarang dan nikmati pengalaman wisata yang tak terlupakan!',
+                      Text(
+                        'Dapatkan pengalaman liburan tropical yang tak terlupakan dengan memesan villa atau paket snorkeling sekarang.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12,
+                          height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // Trigger default tab switch to booking if necessary, or open tickets
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.accent,
@@ -655,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen>
                             vertical: 14,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 0,
                         ),
@@ -673,14 +499,14 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
 
-            // Footer
+            // Footer Section
             SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                decoration: const BoxDecoration(
                   color: AppColors.primaryDark,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(28),
                   ),
                 ),
                 child: Column(
@@ -693,16 +519,17 @@ class _HomeScreenState extends State<HomeScreen>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Text(
                       AppConstants.address,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 11,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -715,21 +542,311 @@ class _HomeScreenState extends State<HomeScreen>
                         _buildSocialIcon(Icons.web_rounded),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     Text(
-                      '© 2024 Desa Wisata Pulau Pahawang',
+                      '© 2026 Desa Wisata Pulau Pahawang. All Rights Reserved.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
-                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.4),
+                        fontSize: 10,
                       ),
                     ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderIconButton({required IconData icon, required VoidCallback onPressed}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: AppColors.primary, size: 20),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({required String title, required VoidCallback onViewAll}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: AppTheme.heading2),
+          GestureDetector(
+            onTap: onViewAll,
+            child: const Text(
+              'Lihat Semua',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVillaCarousel() {
+    return Consumer<VillasProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.villas.isEmpty) {
+          return SizedBox(
+            height: 240,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: 2,
+              itemBuilder: (context, index) => const SizedBox(
+                width: 280,
+                child: PremiumCardSkeleton(),
+              ),
+            ),
+          );
+        }
+        if (provider.villas.isEmpty) {
+          return const SizedBox();
+        }
+        return SizedBox(
+          height: 380,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: provider.villas.length,
+            itemBuilder: (context, index) {
+              final villa = provider.villas[index];
+              return Container(
+                width: 280,
+                margin: const EdgeInsets.only(right: 16),
+                child: PremiumVillaCard(
+                  villa: villa,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DetailScreen(villa: villa)),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPackageCarousel() {
+    return Consumer<PackagesProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.packages.isEmpty) {
+          return SizedBox(
+            height: 240,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: 2,
+              itemBuilder: (context, index) => const SizedBox(
+                width: 280,
+                child: PremiumCardSkeleton(),
+              ),
+            ),
+          );
+        }
+        if (provider.packages.isEmpty) {
+          return const SizedBox();
+        }
+        return SizedBox(
+          height: 380,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: provider.packages.length,
+            itemBuilder: (context, index) {
+              final package = provider.packages[index];
+              return Container(
+                width: 280,
+                margin: const EdgeInsets.only(right: 16),
+                child: PremiumPackageCard(
+                  package: package,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DetailScreen(package: package)),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDestinationsGrid() {
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: destinations.length,
+        itemBuilder: (context, index) {
+          final dest = destinations[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailScreen(destination: dest),
+                ),
+              );
+            },
+            child: Container(
+              width: 170,
+              margin: EdgeInsets.only(
+                right: index < destinations.length - 1 ? 14 : 0,
+              ),
+              child: Container(
+                decoration: AppTheme.cardDecoration,
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            dest.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade100),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    dest.rating.toString(),
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            dest.name,
+                            style: AppTheme.heading3.copyWith(fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dest.description,
+                            style: AppTheme.caption.copyWith(fontSize: 10),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBenefitsGrid() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.95,
+        ),
+        itemCount: 4,
+        itemBuilder: (context, index) {
+          final benefit = benefits[index];
+          return Container(
+            decoration: AppTheme.cardDecoration,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: benefit.color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    benefit.icon,
+                    color: benefit.color,
+                    size: 20,
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      benefit.title,
+                      style: AppTheme.heading3.copyWith(fontSize: 12, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      benefit.description,
+                      style: AppTheme.caption.copyWith(fontSize: 9),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -745,30 +862,14 @@ class _HomeScreenState extends State<HomeScreen>
             Image.network(
               data['image']!,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  decoration: AppTheme.gradientDecoration,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: AppTheme.gradientDecoration,
-                );
-              },
+              errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade100),
             ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withOpacity(0.6),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -785,17 +886,17 @@ class _HomeScreenState extends State<HomeScreen>
                     data['title']!,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     data['subtitle']!,
                     style: const TextStyle(
                       color: Colors.white70,
-                      fontSize: 13,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -810,13 +911,13 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildQuickStat(String emoji, String value, String label) {
     return Column(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 24)),
+        Text(emoji, style: const TextStyle(fontSize: 22)),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -824,7 +925,7 @@ class _HomeScreenState extends State<HomeScreen>
           label,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 11,
+            fontSize: 10,
           ),
         ),
       ],
@@ -835,15 +936,15 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Text(
         label,
         style: TextStyle(
           color: color,
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -852,12 +953,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildSocialIcon(IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: Colors.white, size: 20),
+      child: Icon(icon, color: Colors.white, size: 18),
     );
   }
 
@@ -867,21 +968,23 @@ class _HomeScreenState extends State<HomeScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
+        height: MediaQuery.of(context).size.height * 0.6,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -890,8 +993,7 @@ class _HomeScreenState extends State<HomeScreen>
             TextField(
               decoration: InputDecoration(
                 hintText: 'Ketik nama destinasi...',
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: AppColors.primary),
+                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
                 filled: true,
                 fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
@@ -914,99 +1016,17 @@ class _HomeScreenState extends State<HomeScreen>
                 'Sunset',
                 'Mancing',
               ]
-                  .map((e) => Chip(
-                        label: Text(e, style: const TextStyle(fontSize: 12)),
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                  .map((e) => ActionChip(
+                        label: Text(e, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                        backgroundColor: AppColors.primary.withOpacity(0.06),
+                        onPressed: () {},
                         side: BorderSide.none,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ))
                   .toList(),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showNotificationPanel() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text('Notifikasi', style: AppTheme.heading2),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                children: [
-                  _notifItem(
-                    '🎉 Promo Spesial!',
-                    'Diskon 20% untuk paket snorkeling akhir pekan ini!',
-                    '2 jam yang lalu',
-                  ),
-                  _notifItem(
-                    '🌊 Cuaca Hari Ini',
-                    'Cerah berawan, cocok untuk berwisata bahari!',
-                    '5 jam yang lalu',
-                  ),
-                  _notifItem(
-                    '📸 Galeri Baru',
-                    'Foto-foto terbaru dari pengunjung minggu ini.',
-                    '1 hari yang lalu',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _notifItem(String title, String desc, String time) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text(desc,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(time,
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

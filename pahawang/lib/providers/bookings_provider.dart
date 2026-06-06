@@ -56,10 +56,10 @@ class BookingsProvider with ChangeNotifier {
     try {
       final payload = {
         'booking_type': bookingType,
-        if (villaId != null) 'villa_id': villaId,
-        if (packageId != null) 'package_id': packageId,
-        if (checkIn != null) 'check_in': checkIn,
-        if (checkOut != null) 'check_out': checkOut,
+        'villa_id': ?villaId,
+        'package_id': ?packageId,
+        'check_in': ?checkIn,
+        'check_out': ?checkOut,
         'total_guest': totalGuest,
         'payment_method': paymentMethod,
       };
@@ -95,9 +95,9 @@ class BookingsProvider with ChangeNotifier {
 
     try {
       final payload = {
-        if (checkIn != null) 'check_in': checkIn,
-        if (checkOut != null) 'check_out': checkOut,
-        if (totalGuest != null) 'total_guest': totalGuest,
+        'check_in': ?checkIn,
+        'check_out': ?checkOut,
+        'total_guest': ?totalGuest,
       };
 
       final response = await _dio.patch('/bookings/$id', data: payload);

@@ -28,7 +28,12 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
   }
 
   String _formatPrice(double price) {
-    return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    // Format price with thousands separator and prefix Rp
+    final formatted = price.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+    return 'Rp $formatted';
   }
 
   @override
@@ -63,6 +68,32 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Paid Warning Banner
+                      if (booking.paymentStatus.toLowerCase() == 'paid') ...[
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.danger.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.lock_outline_rounded, color: AppColors.danger),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Pemesanan ini tidak dapat diubah karena status pembayaran sudah lunas.',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.danger, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       // Booking Code & Info Panel
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -104,7 +135,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                               child: _buildDateTile(
                                 label: 'Check-In',
                                 date: _checkIn,
-                                onTap: () async {
+                                onTap: booking.paymentStatus.toLowerCase() == 'paid' ? null : () async {
                                   final picked = await showDatePicker(
                                     context: context,
                                     initialDate: _checkIn ?? DateTime.now().add(const Duration(days: 1)),
@@ -127,7 +158,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                               child: _buildDateTile(
                                 label: 'Check-Out',
                                 date: _checkOut,
-                                onTap: () async {
+                                onTap: booking.paymentStatus.toLowerCase() == 'paid' ? null : () async {
                                   if (_checkIn == null) return;
                                   final picked = await showDatePicker(
                                     context: context,
@@ -147,7 +178,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                         _buildDateTile(
                           label: 'Tanggal Kunjungan',
                           date: _checkIn,
-                          onTap: () async {
+                          onTap: booking.paymentStatus.toLowerCase() == 'paid' ? null : () async {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _checkIn ?? DateTime.now().add(const Duration(days: 1)),
@@ -163,7 +194,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                       const SizedBox(height: 24),
 
                       // Guest Stepper
-                      Row(
+                      Row (
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Column(
@@ -184,7 +215,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.remove, size: 18),
-                                  onPressed: _totalGuest > 1
+                                  onPressed: (_totalGuest > 1 && booking.paymentStatus.toLowerCase() != 'paid')
                                       ? () => setState(() => _totalGuest--)
                                       : null,
                                 ),
@@ -194,7 +225,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.add, size: 18),
-                                  onPressed: _totalGuest < maxCapacity
+                                  onPressed: (_totalGuest < maxCapacity && booking.paymentStatus.toLowerCase() != 'paid')
                                       ? () => setState(() => _totalGuest++)
                                       : null,
                                 ),
@@ -207,7 +238,6 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                   ),
                 ),
               ),
-
               // Bottom sticky save panel
               Container(
                 padding: const EdgeInsets.all(20),
@@ -221,7 +251,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: provider.isLoading ? null : () async {
+                    onPressed: (provider.isLoading || booking.paymentStatus.toLowerCase() == 'paid') ? null : () async {
                       if (_checkIn == null) return;
                       if (isVilla && _checkOut == null) return;
 
@@ -265,7 +295,7 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
     );
   }
 
-  Widget _buildDateTile({required String label, DateTime? date, required VoidCallback onTap}) {
+  Widget _buildDateTile({required String label, DateTime? date, VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

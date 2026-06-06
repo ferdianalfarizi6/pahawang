@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/colors.dart';
-import '../utils/theme.dart';
 import '../models/villa_model.dart';
 import '../models/package_model.dart';
 import '../providers/villas_provider.dart';
 import '../providers/packages_provider.dart';
+import '../widgets/premium_card.dart';
+import '../widgets/premium_feedback.dart';
 import 'detail_screen.dart';
 
 class TicketScreen extends StatefulWidget {
@@ -224,330 +225,48 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
   }
 
   // VILLA CARD BUILDER
+  // VILLA CARD BUILDER
   Widget _buildVillaCard(Villa villa) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: AppTheme.cardDecoration,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Image.network(
-                villa.thumbnail,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 160,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.image_not_supported_rounded, color: Colors.grey, size: 40),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.door_sliding_outlined, color: AppColors.primary, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Kamar: ${villa.availableRoom}',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(villa.name, style: AppTheme.heading3.copyWith(fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, color: Colors.grey, size: 14),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        villa.location,
-                        style: const TextStyle(color: Colors.grey, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                // Facilities Preview
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: villa.facilities
-                      .take(3)
-                      .map((f) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(f, style: const TextStyle(fontSize: 9, color: AppColors.textMedium, fontWeight: FontWeight.bold)),
-                          ))
-                      .toList(),
-                ),
-                const SizedBox(height: 16),
-                
-                // Price & Call-To-Action
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Mulai dari', style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              _formatPrice(villa.pricePerNight),
-                              style: const TextStyle(color: AppColors.primary, fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            const Text(' / malam', style: TextStyle(color: Colors.grey, fontSize: 10)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => DetailScreen(villa: villa)),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: const Text('Detail', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return PremiumVillaCard(
+      villa: villa,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DetailScreen(villa: villa)),
+        );
+      },
     );
   }
 
   // TOUR PACKAGE CARD BUILDER
   Widget _buildPackageCard(TourPackage package) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: AppTheme.cardDecoration,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Image.network(
-                package.thumbnail,
-                height: 160,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 160,
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.image_not_supported_rounded, color: Colors.grey, size: 40),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.hourglass_bottom_rounded, color: AppColors.accent, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        package.duration,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(package.title, style: AppTheme.heading3.copyWith(fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, color: Colors.grey, size: 14),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        package.location,
-                        style: const TextStyle(color: Colors.grey, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Facilities Preview
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: package.facilities
-                      .take(3)
-                      .map((f) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(f, style: const TextStyle(fontSize: 9, color: AppColors.textMedium, fontWeight: FontWeight.bold)),
-                          ))
-                      .toList(),
-                ),
-                const SizedBox(height: 16),
-
-                // Price & Call-To-Action
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Mulai dari', style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              _formatPrice(package.price),
-                              style: const TextStyle(color: AppColors.accent, fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            const Text(' / orang', style: TextStyle(color: Colors.grey, fontSize: 10)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => DetailScreen(package: package)),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
-                      ),
-                      child: const Text('Detail', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return PremiumPackageCard(
+      package: package,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DetailScreen(package: package)),
+        );
+      },
     );
   }
 
   // SKELETON LOADER WIDGET
   Widget _buildSkeletonLoading() {
     return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       itemCount: 3,
-      itemBuilder: (context, index) => Container(
-        height: 250,
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              flex: 3,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.black12,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Container(width: 150, height: 16, color: Colors.black12),
-                    Container(width: 250, height: 12, color: Colors.black12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(width: 80, height: 16, color: Colors.black12),
-                        Container(width: 80, height: 32, color: Colors.black12),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      itemBuilder: (context, index) => const PremiumCardSkeleton(),
     );
   }
 
   // EMPTY WIDGET
   Widget _buildEmptyState(String text) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('🏖️', style: TextStyle(fontSize: 40)),
-          const SizedBox(height: 10),
-          Text(text, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
-        ],
-      ),
+    return PremiumEmptyState(
+      title: 'Tidak Ada Hasil',
+      description: text,
+      emoji: '🏖️',
     );
   }
 
@@ -564,13 +283,14 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
+            const SizedBox(height: 20),
+            PremiumButton(
+              text: 'Coba Lagi',
+              icon: Icons.refresh_rounded,
+              width: 150,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Coba Lagi'),
             ),
           ],
         ),

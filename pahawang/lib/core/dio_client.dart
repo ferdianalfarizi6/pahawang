@@ -27,10 +27,12 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Read stored authentication token from Flutter Secure Storage
-          final token = await _storage.read(key: 'auth_token');
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          // Only inject stored token if caller hasn't already set Authorization
+          if (!options.headers.containsKey('Authorization')) {
+            final token = await _storage.read(key: 'auth_token');
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
           return handler.next(options);
         },

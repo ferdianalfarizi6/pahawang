@@ -7,6 +7,7 @@ import '../models/villa_model.dart';
 import '../models/package_model.dart';
 import '../models/booking_model.dart';
 import '../providers/bookings_provider.dart';
+import '../widgets/premium_card.dart';
 
 class BookingFormScreen extends StatefulWidget {
   const BookingFormScreen({super.key});
@@ -72,7 +73,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.primaryDark, AppColors.primary],
+              colors: AppColors.primaryGradient,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -87,52 +88,53 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. Dynamic Summary Card
+                        // Dynamic Summary Card
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(16),
                           decoration: AppTheme.cardDecoration,
                           child: Row(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 child: Image.network(
                                   thumbnail,
-                                  width: 80,
-                                  height: 80,
+                                  width: 85,
+                                  height: 85,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => Container(
-                                    width: 80,
-                                    height: 80,
-                                    color: Colors.grey.shade200,
+                                    width: 85,
+                                    height: 85,
+                                    color: Colors.grey.shade100,
                                     child: const Icon(Icons.image, color: Colors.grey),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 14),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: (isVilla ? AppColors.primary : AppColors.accent).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(6),
+                                        color: (isVilla ? AppColors.primary : AppColors.accent).withOpacity(0.08),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
-                                        isVilla ? 'Villa & Resort' : 'Paket Wisata',
+                                        isVilla ? '🏡 Villa & Resort' : '🎒 Paket Wisata',
                                         style: TextStyle(
-                                          fontSize: 9,
+                                          fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                           color: isVilla ? AppColors.primary : AppColors.accent,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 8),
                                     Text(
                                       name,
                                       style: AppTheme.heading3.copyWith(fontSize: 14),
@@ -142,7 +144,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       '${_formatPrice(unitPrice)} / ${isVilla ? 'malam' : 'orang'}',
-                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
@@ -152,8 +154,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // 2. Date Pickers Section
-                        Text('Tanggal Kunjungan', style: AppTheme.heading3),
+                        // Date Pickers Section
+                        Text('Tanggal Kunjungan', style: AppTheme.heading2),
                         const SizedBox(height: 12),
                         if (isVilla) ...[
                           Row(
@@ -207,7 +209,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             ],
                           ),
                           if (_checkIn != null && _checkOut != null) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             Text(
                               'Durasi menginap: ${_calculateNights()} malam',
                               style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
@@ -232,87 +234,102 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         ],
                         const SizedBox(height: 24),
 
-                        // 3. Guest Count Stepper
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Jumlah Tamu', style: AppTheme.heading3),
-                                const SizedBox(height: 4),
-                                Text('Kapasitas maksimal: $maxCapacity orang', style: AppTheme.caption),
-                              ],
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Row(
+                        // Guest Count Stepper
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: AppTheme.cardDecoration,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove, size: 18),
-                                    onPressed: _totalGuest > 1
-                                        ? () => setState(() => _totalGuest--)
-                                        : null,
-                                  ),
-                                  Text(
-                                    '$_totalGuest',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 18),
-                                    onPressed: _totalGuest < maxCapacity
-                                        ? () => setState(() => _totalGuest++)
-                                        : null,
-                                  ),
+                                  Text('Jumlah Tamu', style: AppTheme.heading3),
+                                  const SizedBox(height: 4),
+                                  Text('Maksimal: $maxCapacity orang', style: AppTheme.caption),
                                 ],
                               ),
-                            ),
-                          ],
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.grey.shade100),
+                                ),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline_rounded, color: AppColors.primary, size: 22),
+                                      onPressed: _totalGuest > 1
+                                          ? () => setState(() => _totalGuest--)
+                                          : null,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      child: Text(
+                                        '$_totalGuest',
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 22),
+                                      onPressed: _totalGuest < maxCapacity
+                                          ? () => setState(() => _totalGuest++)
+                                          : null,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 28),
 
-                        // 4. Payment Method Grid
-                        Text('Metode Pembayaran', style: AppTheme.heading3),
+                        // Payment Method Grid
+                        Text('Metode Pembayaran', style: AppTheme.heading2),
                         const SizedBox(height: 12),
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
                             childAspectRatio: 2.8,
                           ),
                           itemCount: _paymentMethods.length,
                           itemBuilder: (context, index) {
                             final pm = _paymentMethods[index];
                             final isSelected = _selectedPayment == pm['name'];
+                            final activeColor = isVilla ? AppColors.primary : AppColors.accent;
                             return GestureDetector(
                               onTap: () => setState(() => _selectedPayment = pm['name']!),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: isSelected ? activeColor.withOpacity(0.08) : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                                    color: isSelected ? activeColor : Colors.grey.shade200,
                                     width: isSelected ? 1.5 : 1,
                                   ),
+                                  boxShadow: isSelected ? [
+                                    BoxShadow(
+                                      color: activeColor.withOpacity(0.06),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ] : null,
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Row(
                                   children: [
-                                    Text(pm['icon']!, style: const TextStyle(fontSize: 20)),
-                                    const SizedBox(width: 10),
+                                    Text(pm['icon']!, style: const TextStyle(fontSize: 22)),
+                                    const SizedBox(width: 12),
                                     Text(
                                       pm['name']!,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: isSelected ? AppColors.primary : AppColors.textMedium,
+                                        color: isSelected ? activeColor : AppColors.textMedium,
                                       ),
                                     ),
                                   ],
@@ -321,18 +338,19 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             );
                           },
                         ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
 
-                // 5. Dynamic Sticky Bottom Action Panel
+                // Sticky Bottom Action Panel
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, -5)),
+                      BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, -4)),
                     ],
                   ),
                   child: Row(
@@ -342,14 +360,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Total Pembayaran', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            const Text('Total Pembayaran', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(
                               _formatPrice(totalPrice),
                               style: TextStyle(
                                 color: isVilla ? AppColors.primary : AppColors.accent,
                                 fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ],
@@ -357,60 +375,50 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: bookingsProvider.isLoading ? null : () async {
-                              // Perform Validations
-                              if (_checkIn == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Silakan tentukan tanggal terlebih dahulu.')),
-                                );
-                                return;
-                              }
-                              if (isVilla && _checkOut == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Silakan tentukan tanggal Check-Out terlebih dahulu.')),
-                                );
-                                return;
-                              }
-
-                              final Booking? booking = await bookingsProvider.createBooking(
-                                bookingType: isVilla ? 'villa' : 'package',
-                                villaId: isVilla ? villa.id : null,
-                                packageId: !isVilla ? package!.id : null,
-                                checkIn: _checkIn!.toIso8601String(),
-                                checkOut: isVilla ? _checkOut!.toIso8601String() : null,
-                                totalGuest: _totalGuest,
-                                paymentMethod: _selectedPayment,
+                        child: PremiumButton(
+                          text: 'Bayar Sekarang',
+                          isLoading: bookingsProvider.isLoading,
+                          isSecondary: !isVilla,
+                          onPressed: () async {
+                            if (_checkIn == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Silakan tentukan tanggal terlebih dahulu.')),
                               );
+                              return;
+                            }
+                            if (isVilla && _checkOut == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Silakan tentukan tanggal Check-Out terlebih dahulu.')),
+                              );
+                              return;
+                            }
 
-                              if (booking != null && context.mounted) {
-                                Navigator.of(context).pushReplacementNamed(
-                                  '/payment_success',
-                                  arguments: booking,
+                            final Booking? booking = await bookingsProvider.createBooking(
+                              bookingType: isVilla ? 'villa' : 'package',
+                              villaId: isVilla ? villa.id : null,
+                              packageId: !isVilla ? package!.id : null,
+                              checkIn: _checkIn!.toIso8601String(),
+                              checkOut: isVilla ? _checkOut!.toIso8601String() : null,
+                              totalGuest: _totalGuest,
+                              paymentMethod: _selectedPayment,
+                            );
+
+                            if (booking != null && context.mounted) {
+                              Navigator.of(context).pushReplacementNamed(
+                                '/payment_success',
+                                arguments: booking,
+                              );
+                            } else {
+                              if (context.mounted && bookingsProvider.error != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(bookingsProvider.error!),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
                                 );
-                              } else {
-                                if (context.mounted && bookingsProvider.error != null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(bookingsProvider.error!),
-                                      backgroundColor: Colors.redAccent,
-                                    ),
-                                  );
-                                }
                               }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isVilla ? AppColors.primary : AppColors.accent,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                            child: bookingsProvider.isLoading
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Text('Bayar Sekarang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          ),
+                            }
+                          },
                         ),
                       ),
                     ],
@@ -431,8 +439,15 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -440,10 +455,10 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                const SizedBox(height: 4),
+                Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
                 Text(
-                  date != null ? DateFormat('dd/MM/yyyy').format(date) : '--/--/----',
+                  date != null ? DateFormat('dd MMM yyyy').format(date) : '--/--/----',
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
                 ),
               ],

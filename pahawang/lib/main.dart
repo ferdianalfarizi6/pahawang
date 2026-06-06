@@ -4,12 +4,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'models/booking_model.dart';
 import 'firebase_options.dart';
+import 'splash_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/email_verification_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/location_screen.dart';
 import 'screens/ticket_screen.dart';
 import 'screens/gallery_screen.dart';
 import 'screens/operational_screen.dart';
-import 'screens/benefit_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
@@ -29,9 +31,15 @@ import 'providers/packages_provider.dart';
 import 'providers/bookings_provider.dart';
 import 'providers/admin_provider.dart';
 import 'utils/colors.dart';
+import 'utils/theme.dart';
+import 'core/config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Dynamic API base URL resolution
+  await AppConfig.resolveBaseUrl();
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -79,9 +87,14 @@ class PulauPahawangApp extends StatelessWidget {
         ),
         fontFamily: 'Poppins',
         useMaterial3: true,
+        inputDecorationTheme: AppTheme.inputDecorationTheme,
       ),
-      home: const AuthGate(),
+      initialRoute: '/splash',
       routes: {
+        '/splash': (_) => const SplashScreen(),
+        '/': (_) => const AuthGate(),
+        '/onboarding': (_) => const OnboardingScreen(),
+        '/email_verification': (_) => const EmailVerificationScreen(),
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/forgot_password': (_) => const ForgotPasswordScreen(),
@@ -117,6 +130,10 @@ class AuthGate extends StatelessWidget {
       );
     }
 
+    if (authProvider.isAuthenticated && authProvider.isAdmin) {
+      return const AdminDashboardScreen();
+    }
+
     // Both guest users and authenticated users proceed to main navigation.
     // Feature components check authProvider.isAuthenticated interactively.
     return const MainNavigation();
@@ -141,6 +158,44 @@ class _MainNavigationState extends State<MainNavigation> {
     const OperationalScreen(),
   ];
 
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : Colors.grey.shade400,
+              size: 20,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,50 +203,30 @@ class _MainNavigationState extends State<MainNavigation> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: Colors.grey.shade400,
-            selectedFontSize: 11,
-            unselectedFontSize: 10,
-            elevation: 0,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_rounded),
-                label: 'Beranda',
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.location_on_rounded),
-                label: 'Lokasi',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.confirmation_number_rounded),
-                label: 'Tiket',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.photo_library_rounded),
-                label: 'Galeri',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.access_time_rounded),
-                label: 'Jam Buka',
-              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_rounded, 'Beranda'),
+              _buildNavItem(1, Icons.location_on_rounded, 'Lokasi'),
+              _buildNavItem(2, Icons.confirmation_number_rounded, 'Tiket'),
+              _buildNavItem(3, Icons.photo_library_rounded, 'Galeri'),
+              _buildNavItem(4, Icons.access_time_rounded, 'Jam Buka'),
             ],
           ),
         ),
