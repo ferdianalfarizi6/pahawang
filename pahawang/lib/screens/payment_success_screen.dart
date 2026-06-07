@@ -132,14 +132,23 @@ class PaymentSuccessScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
-        Text(
-          value,
-          style: TextStyle(
-            color: isPrice ? AppColors.accent : AppColors.textDark,
-            fontSize: isPrice ? 16 : 13,
-            fontWeight: (isCode || isPrice) ? FontWeight.bold : FontWeight.w700,
-            fontFamily: isCode ? 'monospace' : null,
-            letterSpacing: isCode ? 1.0 : null,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: isPrice ? AppColors.accent : AppColors.textDark,
+                  fontSize: isPrice ? 16 : 13,
+                  fontWeight: (isCode || isPrice) ? FontWeight.bold : FontWeight.w700,
+                  fontFamily: isCode ? 'monospace' : null,
+                  letterSpacing: isCode ? 1.0 : null,
+                ),
+              ),
+            ),
           ),
         ),
       ],
