@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/colors.dart';
+import '../theme/app_theme.dart';
 import '../models/villa_model.dart';
 import '../models/package_model.dart';
 import '../providers/villas_provider.dart';
@@ -56,21 +56,18 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
             // Top Header & Tropical Blue Gradient Banner
             Container(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primaryDark, AppColors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,11 +90,11 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
                   // Live Search Field
                   TextField(
                     controller: _searchController,
-                    style: const TextStyle(color: AppColors.textDark),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: 'Cari berdasarkan nama atau lokasi...',
                       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary),
+                      prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.primary),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear_rounded, color: Colors.grey),
@@ -121,17 +118,17 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
             Container(
               margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: theme.colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: AppColors.primary,
+                  color: theme.colorScheme.primary,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 labelColor: Colors.white,
-                unselectedLabelColor: AppColors.textMedium,
+                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 indicatorSize: TabBarIndicatorSize.tab,

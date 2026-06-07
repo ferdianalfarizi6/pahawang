@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../utils/colors.dart';
-import '../utils/theme.dart';
+import '../theme/app_theme.dart';
+import '../widgets/cards/modern_card.dart';
 import '../utils/constants.dart';
 
 class LocationScreen extends StatelessWidget {
@@ -9,6 +10,7 @@ class LocationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -30,12 +32,8 @@ class LocationScreen extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.primaryDark, AppColors.primaryLight],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
                       ),
                       child: const Center(
                         child: Column(
@@ -63,84 +61,129 @@ class LocationScreen extends StatelessWidget {
               ),
             ),
 
-            // Map Placeholder
+            // Static Map
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Container(
-                  height: 250,
+                  height: 260,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    color: Colors.grey.shade200,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Stack(
-                      children: [
-                        // Map image placeholder
-                        Container(
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Real static map via OpenStreetMap – no API key, works on web & mobile
+                      Image.network(
+                        'https://staticmap.openstreetmap.de/staticmap.php'
+                        '?center=${AppConstants.latitude},${AppConstants.longitude}'
+                        '&zoom=12&size=800x400'
+                        '&markers=${AppConstants.latitude},${AppConstants.longitude},red',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: theme.colorScheme.primary.withOpacity(0.06),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.map_rounded, size: 54,
+                                  color: theme.colorScheme.primary.withOpacity(0.4)),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Peta tidak tersedia\n(periksa koneksi internet)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Gradient overlay at bottom
+                      Positioned(
+                        left: 0, right: 0, bottom: 0, height: 90,
+                        child: Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
                               colors: [
-                                AppColors.primary.withOpacity(0.2),
-                                AppColors.primaryLight.withOpacity(0.1),
-                              ],
-                            ),
-                          ),
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.map_rounded,
-                                  size: 60,
-                                  color: AppColors.primary,
-                                ),
-                                SizedBox(height: 12),
-                                Text(
-                                  'Peta Lokasi Pulau Pahawang',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Kec. Padang Cermin, Kab. Pesawaran',
-                                  style: TextStyle(
-                                    color: AppColors.textLight,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.5),
                               ],
                             ),
                           ),
                         ),
-                        Positioned(
-                          bottom: 16,
-                          right: 16,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _openMaps(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                      ),
+
+                      // Location label
+                      Positioned(
+                        left: 14, bottom: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 6,
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.location_pin,
+                                  color: Colors.red, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Pulau Pahawang, Lampung',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
-                            ),
-                            icon: const Icon(Icons.directions_rounded, size: 18),
-                            label: const Text(
-                              'Buka di Maps',
-                              style: TextStyle(fontSize: 12),
-                            ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+
+                      // Open Maps button
+                      Positioned(
+                        right: 14, bottom: 14,
+                        child: ElevatedButton.icon(
+                          onPressed: _openMaps,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 9,
+                            ),
+                            elevation: 2,
+                          ),
+                          icon: const Icon(Icons.directions_rounded, size: 16),
+                          label: const Text(
+                            'Buka di Maps',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -150,9 +193,8 @@ class LocationScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
+                child: ModernCard(
                   padding: const EdgeInsets.all(20),
-                  decoration: AppTheme.cardDecoration,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -161,23 +203,23 @@ class LocationScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: theme.colorScheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.location_on_rounded,
-                              color: AppColors.primary,
+                              color: theme.colorScheme.primary,
                               size: 24,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Text('Alamat Lengkap', style: AppTheme.heading3),
+                          Text('Alamat Lengkap', style: theme.textTheme.titleMedium),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Text(
                         AppConstants.address,
-                        style: AppTheme.bodyText,
+                        style: theme.textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 16),
                       const Divider(),
@@ -186,18 +228,21 @@ class LocationScreen extends StatelessWidget {
                         Icons.phone_rounded,
                         'Telepon',
                         AppConstants.phone,
+                        theme,
                       ),
                       const SizedBox(height: 12),
                       _buildContactRow(
                         Icons.email_rounded,
                         'Email',
                         AppConstants.email,
+                        theme,
                       ),
                       const SizedBox(height: 12),
                       _buildContactRow(
                         Icons.web_rounded,
                         'Website',
                         AppConstants.website,
+                        theme,
                       ),
                     ],
                   ),
@@ -209,7 +254,7 @@ class LocationScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Text('Cara Menuju Lokasi', style: AppTheme.heading2),
+                child: Text('Cara Menuju Lokasi', style: theme.textTheme.headlineMedium),
               ),
             ),
 
@@ -223,7 +268,8 @@ class LocationScreen extends StatelessWidget {
                       'Dari Bandar Lampung',
                       'Naik kendaraan ke Dermaga Ketapang (±1 jam)',
                       '± 1 jam perjalanan',
-                      AppColors.primary,
+                      theme.colorScheme.primary,
+                      theme,
                     ),
                     const SizedBox(height: 12),
                     _buildTransportCard(
@@ -231,7 +277,8 @@ class LocationScreen extends StatelessWidget {
                       'Dari Dermaga Ketapang',
                       'Naik perahu ke Pulau Pahawang (±30 menit)',
                       '± 30 menit penyeberangan',
-                      AppColors.accent,
+                      theme.colorScheme.secondary,
+                      theme,
                     ),
                     const SizedBox(height: 12),
                     _buildTransportCard(
@@ -239,7 +286,8 @@ class LocationScreen extends StatelessWidget {
                       'Speedboat Charter',
                       'Sewa speedboat langsung ke pulau',
                       '± 15 menit perjalanan',
-                      AppColors.success,
+                      theme.brightness == Brightness.light ? const Color(0xFF059669) : const Color(0xFF34D399),
+                      theme,
                     ),
                   ],
                 ),
@@ -253,7 +301,7 @@ class LocationScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
+                    color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -282,17 +330,19 @@ class LocationScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: () => _copyCoordinates(),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white30),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      Builder(
+                        builder: (ctx) => OutlinedButton.icon(
+                          onPressed: () => _copyCoordinates(ctx),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white38),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
+                          icon: const Icon(Icons.copy_rounded, size: 16),
+                          label: const Text('Salin Koordinat'),
                         ),
-                        icon: const Icon(Icons.copy_rounded, size: 16),
-                        label: const Text('Salin Koordinat'),
                       ),
                     ],
                   ),
@@ -309,16 +359,16 @@ class LocationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContactRow(IconData icon, String label, String value) {
+  Widget _buildContactRow(IconData icon, String label, String value, ThemeData theme) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.primary),
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label,
-                style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
+                style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant)),
             Text(value,
                 style: const TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w500)),
@@ -334,10 +384,10 @@ class LocationScreen extends StatelessWidget {
     String desc,
     String duration,
     Color color,
+    ThemeData theme,
   ) {
-    return Container(
+    return ModernCard(
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.cardDecoration,
       child: Row(
         children: [
           Text(emoji, style: const TextStyle(fontSize: 32)),
@@ -352,7 +402,7 @@ class LocationScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(desc,
                     style: TextStyle(
-                        color: Colors.grey.shade600, fontSize: 12)),
+                        color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                 const SizedBox(height: 6),
                 Container(
                   padding:
@@ -370,8 +420,8 @@ class LocationScreen extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded,
-              size: 16, color: Colors.grey),
+          Icon(Icons.arrow_forward_ios_rounded,
+              size: 16, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );
@@ -397,14 +447,37 @@ class LocationScreen extends StatelessWidget {
   Future<void> _openMaps() async {
     final url = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=${AppConstants.latitude},${AppConstants.longitude}');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
-  void _copyCoordinates() {
-    // In real app, use Clipboard
-    debugPrint(
-        'Coordinates copied: ${AppConstants.latitude}, ${AppConstants.longitude}');
+  void _copyCoordinates(BuildContext context) {
+    final theme = Theme.of(context);
+    final text =
+        '${AppConstants.latitude}, ${AppConstants.longitude}';
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded,
+                color: Colors.white, size: 16),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Koordinat disalin: $text',
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: theme.brightness == Brightness.light ? const Color(0xFF059669) : const Color(0xFF34D399),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 }

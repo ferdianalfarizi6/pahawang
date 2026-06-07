@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../utils/colors.dart';
-import '../utils/theme.dart';
+import '../theme/app_theme.dart';
+import '../widgets/cards/modern_card.dart';
 import '../models/booking_model.dart';
 import '../providers/bookings_provider.dart';
 import '../providers/admin_provider.dart';
@@ -35,23 +35,24 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String status, ThemeData theme) {
     switch (status.toLowerCase()) {
       case 'paid':
       case 'completed':
       case 'confirmed':
-        return AppColors.success;
+        return theme.brightness == Brightness.light ? const Color(0xFF059669) : const Color(0xFF34D399);
       case 'pending':
       case 'waiting':
-        return AppColors.warning;
+        return theme.brightness == Brightness.light ? const Color(0xFFD97706) : const Color(0xFFFBBF24);
       case 'cancelled':
-        return AppColors.danger;
+        return Colors.redAccent;
       default:
         return Colors.grey;
     }
   }
 
   Future<void> _handleCancel() async {
+    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -64,12 +65,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Kembali', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+            child: Text('Kembali', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
+              backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -86,14 +87,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pemesanan berhasil dibatalkan.'), backgroundColor: AppColors.success),
+          const SnackBar(content: Text('Pemesanan berhasil dibatalkan.'), backgroundColor: Color(0xFF059669)),
         );
         Navigator.pop(context);
       } else {
         if (mounted) {
           final error = Provider.of<BookingsProvider>(context, listen: false).error ?? 'Gagal membatalkan pemesanan.';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+            SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
           );
         }
       }
@@ -101,6 +102,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
   }
 
   Future<void> _handleAdminStatusUpdate() async {
+    final theme = Theme.of(context);
     if (_selectedPaymentStatus == null || _selectedBookingStatus == null) return;
 
     setState(() => _isProcessing = true);
@@ -113,7 +115,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status pemesanan berhasil diperbarui.'), backgroundColor: AppColors.success),
+        const SnackBar(content: Text('Status pemesanan berhasil diperbarui.'), backgroundColor: Color(0xFF059669)),
       );
       setState(() {
         _currentBooking = Booking(
@@ -141,7 +143,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       if (mounted) {
         final error = Provider.of<AdminProvider>(context, listen: false).error ?? 'Gagal memperbarui status.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+          SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
         );
       }
     }
@@ -149,6 +151,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final booking = _currentBooking;
     final isVilla = booking.bookingType == 'villa';
     final title = isVilla ? (booking.villa?.name ?? 'Villa') : (booking.package?.title ?? 'Paket Wisata');
@@ -161,17 +164,13 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
         : DateFormat('dd MMMM yyyy').format(booking.checkIn!);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text('Detail Pemesanan', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
         iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: AppColors.primaryGradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
           ),
         ),
       ),
@@ -183,24 +182,24 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           children: [
             // Status Timeline Tracker (Only if not cancelled)
             if (!isCancelled) ...[
-              _buildTimelineTracker(booking),
+              _buildTimelineTracker(booking, theme),
               const SizedBox(height: 20),
             ] else ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.danger.withOpacity(0.08),
+                  color: Colors.redAccent.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                  border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.cancel_rounded, color: AppColors.danger),
+                    Icon(Icons.cancel_rounded, color: Colors.redAccent),
                     SizedBox(width: 12),
                     Text(
                       'Pemesanan ini telah dibatalkan',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.danger, fontSize: 13),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 13),
                     ),
                   ],
                 ),
@@ -209,8 +208,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             ],
 
             // Invoice / Receipt Digital Look
-            Container(
-              decoration: AppTheme.cardDecoration,
+            ModernCard(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Column(
@@ -218,7 +216,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     // Invoice Top Header
                     Container(
                       padding: const EdgeInsets.all(20),
-                      color: AppColors.primary.withOpacity(0.04),
+                      color: theme.colorScheme.primary.withOpacity(0.04),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -227,16 +225,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             children: [
                               Text(
                                 'Kode Booking',
-                                style: AppTheme.caption.copyWith(fontWeight: FontWeight.bold),
+                                style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 booking.bookingCode,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryDark,
+                                  color: theme.colorScheme.primary,
                                   letterSpacing: 1.0,
                                 ),
                               ),
@@ -245,16 +243,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: _getStatusColor(booking.paymentStatus).withOpacity(0.08),
+                              color: _getStatusColor(booking.paymentStatus, theme).withOpacity(0.08),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _getStatusColor(booking.paymentStatus).withOpacity(0.2)),
+                              border: Border.all(color: _getStatusColor(booking.paymentStatus, theme).withOpacity(0.2)),
                             ),
                             child: Text(
                               booking.paymentStatus.toUpperCase(),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: _getStatusColor(booking.paymentStatus),
+                                color: _getStatusColor(booking.paymentStatus, theme),
                               ),
                             ),
                           ),
@@ -274,7 +272,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: (isVilla ? AppColors.primary : AppColors.accent).withOpacity(0.08),
+                                  color: (isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary).withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(isVilla ? '🏡' : '🎒', style: const TextStyle(fontSize: 22)),
@@ -286,12 +284,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                   children: [
                                     Text(
                                       isVilla ? 'Villa & Resort' : 'Paket Wisata',
-                                      style: AppTheme.caption.copyWith(fontWeight: FontWeight.bold),
+                                      style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       title,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: theme.colorScheme.onSurface),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -303,23 +301,23 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           const Divider(height: 32, color: Color(0xFFF1F3F5)),
 
                           if (booking.user != null) ...[
-                            _buildInvoiceRow(Icons.person_outline_rounded, 'Pelanggan', booking.userFullName ?? '-'),
+                            _buildInvoiceRow(Icons.person_outline_rounded, 'Pelanggan', booking.userFullName ?? '-', theme),
                             const SizedBox(height: 12),
-                            _buildInvoiceRow(Icons.email_outlined, 'Email', booking.userEmail ?? '-'),
+                            _buildInvoiceRow(Icons.email_outlined, 'Email', booking.userEmail ?? '-', theme),
                             const SizedBox(height: 12),
                             if (booking.user?.phone != null) ...[
-                              _buildInvoiceRow(Icons.phone_android_rounded, 'Nomor HP', booking.user!.phone!),
+                              _buildInvoiceRow(Icons.phone_android_rounded, 'Nomor HP', booking.user!.phone!, theme),
                               const SizedBox(height: 12),
                             ],
                           ],
-                          _buildInvoiceRow(Icons.calendar_month_outlined, 'Jadwal Wisata', dateStr),
+                          _buildInvoiceRow(Icons.calendar_month_outlined, 'Jadwal Wisata', dateStr, theme),
                           const SizedBox(height: 12),
-                          _buildInvoiceRow(Icons.people_outline_rounded, 'Jumlah Tamu', '${booking.totalGuest} Orang'),
+                          _buildInvoiceRow(Icons.people_outline_rounded, 'Jumlah Tamu', '${booking.totalGuest} Orang', theme),
                           const SizedBox(height: 12),
-                          _buildInvoiceRow(Icons.payment_rounded, 'Metode Bayar', booking.paymentMethod),
+                          _buildInvoiceRow(Icons.payment_rounded, 'Metode Bayar', booking.paymentMethod, theme),
                           const SizedBox(height: 12),
-                          _buildInvoiceRow(Icons.info_outline_rounded, 'Status Tiket', booking.bookingStatus.toUpperCase(),
-                              valColor: _getStatusColor(booking.bookingStatus)),
+                          _buildInvoiceRow(Icons.info_outline_rounded, 'Status Tiket', booking.bookingStatus.toUpperCase(), theme,
+                              valColor: _getStatusColor(booking.bookingStatus, theme)),
                         ],
                       ),
                     ),
@@ -330,17 +328,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             const SizedBox(height: 20),
 
             // Billing Summary Panel
-            Container(
+            ModernCard(
               padding: const EdgeInsets.all(20),
-              decoration: AppTheme.cardDecoration,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textMedium)),
+                  Text('Total Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
                   Text(
                     _formatPrice(booking.totalPrice),
                     style: TextStyle(
-                      color: isVilla ? AppColors.primary : AppColors.accent,
+                      color: isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                     ),
@@ -352,35 +349,30 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
             // Controls (Admin panel or regular cancel/modify options)
             if (isAdmin) ...[
-              Container(
+              ModernCard(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.15), width: 1.5),
-                  boxShadow: AppColors.premiumShadow,
-                ),
+                border: Border.all(color: theme.colorScheme.primary.withOpacity(0.15), width: 1.5),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.admin_panel_settings_rounded, color: AppColors.primary, size: 24),
-                        SizedBox(width: 8),
+                        Icon(Icons.admin_panel_settings_rounded, color: theme.colorScheme.primary, size: 24),
+                        const SizedBox(width: 8),
                         Text(
                           'PANEL KONTROL ADMIN',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Ubah status pembayaran dan pemesanan secara langsung.',
-                      style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                      style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
                     ),
                     const Divider(height: 24),
                     
-                    const Text('Status Pembayaran', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMedium)),
+                    Text('Status Pembayaran', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     _buildDropdown(
                       value: _selectedPaymentStatus,
@@ -392,10 +384,11 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 setState(() => _selectedPaymentStatus = val);
                               }
                             },
+                      theme: theme,
                     ),
                     const SizedBox(height: 16),
 
-                    const Text('Status Pemesanan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textMedium)),
+                    Text('Status Pemesanan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     _buildDropdown(
                       value: _selectedBookingStatus,
@@ -407,6 +400,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 setState(() => _selectedBookingStatus = val);
                               }
                             },
+                      theme: theme,
                     ),
                     const SizedBox(height: 24),
 
@@ -423,18 +417,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withOpacity(0.04),
+                    color: Colors.redAccent.withOpacity(0.04),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.danger.withOpacity(0.15)),
+                    border: Border.all(color: Colors.redAccent.withOpacity(0.15)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.lock_outline_rounded, color: AppColors.danger, size: 20),
-                      SizedBox(width: 12),
+                      const Icon(Icons.lock_outline_rounded, color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Pemesanan ini tidak dapat diubah atau dibatalkan karena sudah lunas.',
-                          style: TextStyle(color: AppColors.danger, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -457,8 +451,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           icon: const Icon(Icons.edit_note_rounded, size: 22),
                           label: const Text('Ubah Jadwal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: const BorderSide(color: AppColors.primary, width: 1.5),
+                            foregroundColor: theme.colorScheme.primary,
+                            side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                         ),
@@ -544,19 +538,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     }
   }
 
-  Widget _buildDropdown({required String? value, required List<DropdownMenuItem<String>> items, required ValueChanged<String?>? onChanged}) {
+  Widget _buildDropdown({required String? value, required List<DropdownMenuItem<String>> items, required ValueChanged<String?>? onChanged, required ThemeData theme}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border.all(color: Colors.grey.shade200),
+        color: theme.colorScheme.surfaceVariant,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMedium),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: theme.colorScheme.onSurfaceVariant),
           items: items,
           onChanged: onChanged,
         ),
@@ -564,15 +558,15 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
-  Widget _buildInvoiceRow(IconData icon, String label, String value, {Color? valColor}) {
+  Widget _buildInvoiceRow(IconData icon, String label, String value, ThemeData theme, {Color? valColor}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.grey.shade400, size: 18),
+        Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 18),
         const SizedBox(width: 12),
         Text(
           label,
-          style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -580,7 +574,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: valColor ?? AppColors.textDark,
+              color: valColor ?? theme.colorScheme.onSurface,
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -590,7 +584,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
-  Widget _buildTimelineTracker(Booking booking) {
+  Widget _buildTimelineTracker(Booking booking, ThemeData theme) {
     // Determine active steps
     final String bStatus = booking.bookingStatus.toLowerCase();
     final String pStatus = booking.paymentStatus.toLowerCase();
@@ -600,23 +594,22 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     bool step3 = bStatus == 'confirmed' || bStatus == 'completed';
     bool step4 = bStatus == 'completed';
 
-    return Container(
+    return ModernCard(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-      decoration: AppTheme.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Status Pemesanan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+          Text('Status Pemesanan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: theme.colorScheme.onSurface)),
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildTimelineNode('Dibuat', step1, true),
-              _buildTimelineLine(step2),
-              _buildTimelineNode('Bayar', step2, false),
-              _buildTimelineLine(step3),
-              _buildTimelineNode('Konfirmasi', step3, false),
-              _buildTimelineLine(step4),
-              _buildTimelineNode('Selesai', step4, false),
+              _buildTimelineNode('Dibuat', step1, true, theme),
+              _buildTimelineLine(step2, theme),
+              _buildTimelineNode('Bayar', step2, false, theme),
+              _buildTimelineLine(step3, theme),
+              _buildTimelineNode('Konfirmasi', step3, false, theme),
+              _buildTimelineLine(step4, theme),
+              _buildTimelineNode('Selesai', step4, false, theme),
             ],
           ),
         ],
@@ -624,18 +617,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
-  Widget _buildTimelineNode(String label, bool isActive, bool isStart) {
+  Widget _buildTimelineNode(String label, bool isActive, bool isStart, ThemeData theme) {
     return Expanded(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
             radius: 12,
-            backgroundColor: isActive ? AppColors.primary : Colors.grey.shade200,
+            backgroundColor: isActive ? theme.colorScheme.primary : theme.colorScheme.surfaceVariant,
             child: Icon(
               isActive ? Icons.check_rounded : Icons.radio_button_unchecked_rounded,
               size: 14,
-              color: isActive ? Colors.white : Colors.grey.shade400,
+              color: isActive ? Colors.white : theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 6),
@@ -645,7 +638,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.bold,
-              color: isActive ? AppColors.primary : Colors.grey.shade400,
+              color: isActive ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -653,12 +646,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
-  Widget _buildTimelineLine(bool isActive) {
+  Widget _buildTimelineLine(bool isActive, ThemeData theme) {
     return Container(
       width: 25,
       height: 3,
       margin: const EdgeInsets.only(bottom: 15),
-      color: isActive ? AppColors.primary : Colors.grey.shade200,
+      color: isActive ? theme.colorScheme.primary : theme.colorScheme.surfaceVariant,
     );
   }
 }

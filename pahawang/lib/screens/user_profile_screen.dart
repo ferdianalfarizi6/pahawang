@@ -223,11 +223,45 @@ class UserProfileScreen extends StatelessWidget {
                   text: 'Keluar Akun',
                   icon: Icons.logout_rounded,
                   isSecondary: true,
-                  onPressed: () async {
-                    await auth.logout();
-                    if (context.mounted) {
-                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-                    }
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        title: const Text(
+                          'Keluar Akun',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                        ),
+                        content: const Text(
+                          'Apakah Anda yakin ingin keluar dari akun Anda?',
+                          style: TextStyle(fontSize: 13, color: AppColors.textMedium),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text(
+                              'Batal',
+                              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              if (context.mounted) {
+                                // Navigate first so widget is gone from tree before
+                                // notifyListeners() fires inside logout().
+                                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                              }
+                              auth.logout(); // intentionally not awaited
+                            },
+                            child: const Text(
+                              'Keluar',
+                              style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 24),

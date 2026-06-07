@@ -307,9 +307,6 @@ class AuthProvider with ChangeNotifier {
 
   // Logout
   Future<void> logout() async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
       await _auth.signOut();
     } catch (_) {}
@@ -319,6 +316,7 @@ class AuthProvider with ChangeNotifier {
     _user = null;
     _token = null;
     _isLoading = false;
+    // Notify once at the end so consumers rebuild cleanly after state is fully cleared.
     notifyListeners();
   }
 

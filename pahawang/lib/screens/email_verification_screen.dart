@@ -265,10 +265,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen>
 
   Future<void> _signOut() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.logout();
     if (mounted) {
+      // Navigate first so this widget is removed from the tree before
+      // notifyListeners() fires inside logout().
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (r) => false);
     }
+    authProvider.logout(); // intentionally not awaited
   }
 
   @override

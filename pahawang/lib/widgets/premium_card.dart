@@ -190,7 +190,6 @@ class _PremiumVillaCardState extends State<PremiumVillaCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
       decoration: AppTheme.cardDecoration,
       clipBehavior: Clip.antiAlias,
       child: Material(
@@ -329,8 +328,9 @@ class _PremiumVillaCardState extends State<PremiumVillaCard> {
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
+                      clipBehavior: Clip.antiAlias,
                       children: widget.villa.facilities
-                          .take(3)
+                          .take(2)
                           .map((f) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -338,11 +338,11 @@ class _PremiumVillaCardState extends State<PremiumVillaCard> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.grey.shade100),
                                 ),
-                                child: Text(f, style: const TextStyle(fontSize: 10, color: AppColors.textMedium, fontWeight: FontWeight.w600)),
+                                child: Text(f, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: AppColors.textMedium, fontWeight: FontWeight.w600)),
                               ))
                           .toList(),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 12),
                     
                     // Price & Call-To-Action
                     Row(
@@ -410,7 +410,6 @@ class _PremiumPackageCardState extends State<PremiumPackageCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
       decoration: AppTheme.cardDecoration,
       clipBehavior: Clip.antiAlias,
       child: Material(
@@ -549,8 +548,9 @@ class _PremiumPackageCardState extends State<PremiumPackageCard> {
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
+                      clipBehavior: Clip.antiAlias,
                       children: widget.package.facilities
-                          .take(3)
+                          .take(2)
                           .map((f) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -558,11 +558,11 @@ class _PremiumPackageCardState extends State<PremiumPackageCard> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.grey.shade100),
                                 ),
-                                child: Text(f, style: const TextStyle(fontSize: 10, color: AppColors.textMedium, fontWeight: FontWeight.w600)),
+                                child: Text(f, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: AppColors.textMedium, fontWeight: FontWeight.w600)),
                               ))
                           .toList(),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 12),
                     
                     // Price & Call-To-Action
                     Row(

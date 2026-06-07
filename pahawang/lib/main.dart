@@ -30,8 +30,7 @@ import 'providers/villas_provider.dart';
 import 'providers/packages_provider.dart';
 import 'providers/bookings_provider.dart';
 import 'providers/admin_provider.dart';
-import 'utils/colors.dart';
-import 'utils/theme.dart';
+import 'theme/app_theme.dart';
 import 'core/config.dart';
 
 Future<void> main() async {
@@ -77,18 +76,9 @@ class PulauPahawangApp extends StatelessWidget {
     return MaterialApp(
       title: 'Desa Wisata Pulau Pahawang',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.accent,
-        ),
-        fontFamily: 'Poppins',
-        useMaterial3: true,
-        inputDecorationTheme: AppTheme.inputDecorationTheme,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       initialRoute: '/splash',
       routes: {
         '/splash': (_) => const SplashScreen(),
@@ -119,12 +109,13 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final theme = Theme.of(context);
 
     if (authProvider.isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
           ),
         ),
       );
@@ -160,6 +151,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       behavior: HitTestBehavior.opaque,
@@ -168,7 +160,7 @@ class _MainNavigationState extends State<MainNavigation> {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.transparent,
+          color: isSelected ? theme.colorScheme.primary.withOpacity(0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -176,15 +168,15 @@ class _MainNavigationState extends State<MainNavigation> {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : Colors.grey.shade400,
+              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
               size: 20,
             ),
             if (isSelected) ...[
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
                 ),
@@ -198,6 +190,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -209,7 +202,7 @@ class _MainNavigationState extends State<MainNavigation> {
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(

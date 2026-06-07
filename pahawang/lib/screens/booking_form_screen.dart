@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../utils/colors.dart';
-import '../utils/theme.dart';
+import '../theme/app_theme.dart';
+import '../widgets/cards/modern_card.dart';
+import '../widgets/buttons/primary_button.dart';
+import '../widgets/inputs/modern_text_field.dart';
 import '../models/villa_model.dart';
 import '../models/package_model.dart';
 import '../models/booking_model.dart';
@@ -53,6 +55,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final Villa? villa = args['villa'];
     final TourPackage? package = args['package'];
@@ -66,17 +69,13 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     final totalPrice = _calculateTotal(unitPrice, isVilla);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text('Checkout Pemesanan', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
         iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: AppColors.primaryGradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
           ),
         ),
       ),
@@ -94,9 +93,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Dynamic Summary Card
-                        Container(
+                        ModernCard(
                           padding: const EdgeInsets.all(16),
-                          decoration: AppTheme.cardDecoration,
                           child: Row(
                             children: [
                               ClipRRect(
@@ -109,8 +107,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                   errorBuilder: (context, error, stackTrace) => Container(
                                     width: 85,
                                     height: 85,
-                                    color: Colors.grey.shade100,
-                                    child: const Icon(Icons.image, color: Colors.grey),
+                                    color: theme.colorScheme.surfaceVariant,
+                                    child: Icon(Icons.image, color: theme.colorScheme.onSurfaceVariant),
                                   ),
                                 ),
                               ),
@@ -122,7 +120,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: (isVilla ? AppColors.primary : AppColors.accent).withOpacity(0.08),
+                                        color: (isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary).withOpacity(0.08),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -130,21 +128,21 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
-                                          color: isVilla ? AppColors.primary : AppColors.accent,
+                                          color: isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       name,
-                                      style: AppTheme.heading3.copyWith(fontSize: 14),
+                                      style: theme.textTheme.titleSmall?.copyWith(fontSize: 14),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '${_formatPrice(unitPrice)} / ${isVilla ? 'malam' : 'orang'}',
-                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
+                                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
@@ -155,7 +153,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         const SizedBox(height: 24),
 
                         // Date Pickers Section
-                        Text('Tanggal Kunjungan', style: AppTheme.heading2),
+                        Text('Tanggal Kunjungan', style: theme.textTheme.headlineMedium),
                         const SizedBox(height: 12),
                         if (isVilla) ...[
                           Row(
@@ -164,6 +162,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 child: _buildDateTile(
                                   label: 'Check-In',
                                   date: _checkIn,
+                                  theme: theme,
                                   onTap: () async {
                                     final picked = await showDatePicker(
                                       context: context,
@@ -187,6 +186,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 child: _buildDateTile(
                                   label: 'Check-Out',
                                   date: _checkOut,
+                                  theme: theme,
                                   onTap: () async {
                                     if (_checkIn == null) {
                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -212,13 +212,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             const SizedBox(height: 12),
                             Text(
                               'Durasi menginap: ${_calculateNights()} malam',
-                              style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ] else ...[
                           _buildDateTile(
                             label: 'Tanggal Kunjungan',
                             date: _checkIn,
+                            theme: theme,
                             onTap: () async {
                               final picked = await showDatePicker(
                                 context: context,
@@ -235,30 +236,29 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         const SizedBox(height: 24),
 
                         // Guest Count Stepper
-                        Container(
+                        ModernCard(
                           padding: const EdgeInsets.all(16),
-                          decoration: AppTheme.cardDecoration,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Jumlah Tamu', style: AppTheme.heading3),
+                                  Text('Jumlah Tamu', style: theme.textTheme.titleMedium),
                                   const SizedBox(height: 4),
-                                  Text('Maksimal: $maxCapacity orang', style: AppTheme.caption),
+                                  Text('Maksimal: $maxCapacity orang', style: theme.textTheme.labelSmall),
                                 ],
                               ),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
+                                  color: theme.colorScheme.surfaceVariant,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.grey.shade100),
+                                  border: Border.all(color: theme.colorScheme.outlineVariant),
                                 ),
                                 child: Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline_rounded, color: AppColors.primary, size: 22),
+                                      icon: Icon(Icons.remove_circle_outline_rounded, color: theme.colorScheme.primary, size: 22),
                                       onPressed: _totalGuest > 1
                                           ? () => setState(() => _totalGuest--)
                                           : null,
@@ -267,11 +267,11 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 10),
                                       child: Text(
                                         '$_totalGuest',
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 22),
+                                      icon: Icon(Icons.add_circle_outline_rounded, color: theme.colorScheme.primary, size: 22),
                                       onPressed: _totalGuest < maxCapacity
                                           ? () => setState(() => _totalGuest++)
                                           : null,
@@ -285,7 +285,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         const SizedBox(height: 28),
 
                         // Payment Method Grid
-                        Text('Metode Pembayaran', style: AppTheme.heading2),
+                        Text('Metode Pembayaran', style: theme.textTheme.headlineMedium),
                         const SizedBox(height: 12),
                         GridView.builder(
                           shrinkWrap: true,
@@ -300,15 +300,15 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                           itemBuilder: (context, index) {
                             final pm = _paymentMethods[index];
                             final isSelected = _selectedPayment == pm['name'];
-                            final activeColor = isVilla ? AppColors.primary : AppColors.accent;
+                            final activeColor = isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary;
                             return GestureDetector(
                               onTap: () => setState(() => _selectedPayment = pm['name']!),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: isSelected ? activeColor.withOpacity(0.08) : Colors.white,
+                                  color: isSelected ? activeColor.withOpacity(0.08) : theme.colorScheme.surface,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? activeColor : Colors.grey.shade200,
+                                    color: isSelected ? activeColor : theme.colorScheme.outlineVariant,
                                     width: isSelected ? 1.5 : 1,
                                   ),
                                   boxShadow: isSelected ? [
@@ -329,7 +329,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: isSelected ? activeColor : AppColors.textMedium,
+                                        color: isSelected ? activeColor : theme.colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ],
@@ -348,7 +348,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.colorScheme.surface,
                     boxShadow: [
                       BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, -4)),
                     ],
@@ -360,12 +360,12 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Total Pembayaran', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w600)),
+                            Text('Total Pembayaran', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(
                               _formatPrice(totalPrice),
                               style: TextStyle(
-                                color: isVilla ? AppColors.primary : AppColors.accent,
+                                color: isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -432,15 +432,15 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     );
   }
 
-  Widget _buildDateTile({required String label, DateTime? date, required VoidCallback onTap}) {
+  Widget _buildDateTile({required String label, DateTime? date, required VoidCallback onTap, required ThemeData theme}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -455,15 +455,15 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                Text(label, style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 Text(
                   date != null ? DateFormat('dd MMM yyyy').format(date) : '--/--/----',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                 ),
               ],
             ),
-            const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 20),
+            Icon(Icons.calendar_month_rounded, color: theme.colorScheme.primary, size: 20),
           ],
         ),
       ),

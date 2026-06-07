@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
-import '../utils/colors.dart';
-import '../utils/theme.dart';
-import '../widgets/premium_card.dart';
+import '../theme/app_theme.dart';
+import '../widgets/buttons/primary_button.dart';
+import '../widgets/inputs/modern_text_field.dart';
+import '../widgets/cards/modern_card.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -39,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _onPasswordChanged(String pass) {
+    final theme = Theme.of(context);
     if (pass.isEmpty) {
       setState(() {
         _passwordStrength = '';
@@ -49,17 +51,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (pass.length < 6) {
       setState(() {
         _passwordStrength = 'Lemah';
-        _strengthColor = AppColors.danger;
+        _strengthColor = theme.colorScheme.error;
       });
     } else if (pass.length < 8 || !RegExp(r'[0-9]').hasMatch(pass)) {
       setState(() {
         _passwordStrength = 'Sedang';
-        _strengthColor = AppColors.warning;
+        _strengthColor = theme.brightness == Brightness.light
+            ? const Color(0xFFD97706)
+            : const Color(0xFFFBBF24);
       });
     } else {
       setState(() {
         _passwordStrength = 'Kuat';
-        _strengthColor = AppColors.success;
+        _strengthColor = theme.brightness == Brightness.light
+            ? const Color(0xFF059669)
+            : const Color(0xFF34D399);
       });
     }
   }
@@ -121,8 +127,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -133,13 +140,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Container(
                   height: 240,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppColors.primaryGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(40),
                     ),
                   ),
@@ -159,22 +162,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          const Text(
+                          Text(
                             'Buat Akun Baru',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
+                            style: theme.textTheme.displaySmall?.copyWith(
                               color: Colors.white,
-                              letterSpacing: -0.6,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Daftar untuk menikmati wisata Pulau Pahawang',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withOpacity(0.7),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withOpacity(0.85),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -198,9 +198,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               offset: const Offset(0, -30),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
+                child: ModernCard(
                   padding: const EdgeInsets.all(24),
-                  decoration: AppTheme.cardDecoration,
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -211,19 +210,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.danger.withOpacity(0.08),
+                              color: theme.colorScheme.errorContainer,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                              border: Border.all(color: theme.colorScheme.error.withOpacity(0.2)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 20),
+                                Icon(Icons.error_outline_rounded, color: theme.colorScheme.error, size: 20),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     _error!,
-                                    style: const TextStyle(
-                                      color: AppColors.danger,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.error,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -236,25 +235,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
 
                         // Name field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Nama Lengkap',
+                          hint: 'Masukkan nama lengkap',
                           controller: _nameController,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.person_outline_rounded,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) return 'Nama lengkap wajib diisi';
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Nama Lengkap',
-                            prefixIcon: Icon(Icons.person_outline_rounded, color: Colors.grey.shade400, size: 20),
-                          ),
                         ),
                         const SizedBox(height: 14),
 
                         // Email field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Alamat Email',
+                          hint: 'nama@email.com',
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.email_outlined,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
                             if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
@@ -262,18 +261,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             }
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Alamat Email',
-                            prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade400, size: 20),
-                          ),
                         ),
                         const SizedBox(height: 14),
 
                         // Phone field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Nomor WhatsApp',
+                          hint: '628xxx',
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.phone_android_rounded,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) return 'Nomor WhatsApp wajib diisi';
                             String trimmed = value.trim();
@@ -283,35 +280,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (!trimmed.startsWith('62')) return 'Gunakan format 62xxx atau 08xxx';
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Nomor WhatsApp (628xxx)',
-                            prefixIcon: Icon(Icons.phone_android_rounded, color: Colors.grey.shade400, size: 20),
-                          ),
                         ),
                         const SizedBox(height: 14),
 
                         // Password field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Kata Sandi',
+                          hint: '••••••••',
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.lock_outline_rounded,
+                          suffixIcon: _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          onSuffixIconPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                           validator: (value) {
                             if (value == null || value.isEmpty) return 'Password wajib diisi';
                             if (value.length < 6) return 'Password minimal 6 karakter';
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Kata Sandi',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey.shade400, size: 20),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: Colors.grey.shade400,
-                                size: 20,
-                              ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
                         ),
                         
                         // Live password strength indicator
@@ -324,7 +309,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   borderRadius: BorderRadius.circular(10),
                                   child: LinearProgressIndicator(
                                     value: _passwordStrength == 'Lemah' ? 0.3 : (_passwordStrength == 'Sedang' ? 0.6 : 1.0),
-                                    backgroundColor: Colors.grey.shade100,
+                                    backgroundColor: theme.colorScheme.surfaceVariant,
                                     valueColor: AlwaysStoppedAnimation<Color>(_strengthColor),
                                     minHeight: 5,
                                   ),
@@ -341,27 +326,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 14),
 
                         // Confirm Password field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Konfirmasi Sandi',
+                          hint: '••••••••',
                           controller: _confirmPasswordController,
                           obscureText: _obscureConfirm,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.lock_outline_rounded,
+                          suffixIcon: _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          onSuffixIconPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                           validator: (value) {
                             if (value == null || value.isEmpty) return 'Konfirmasi password wajib diisi';
                             if (value != _passwordController.text) return 'Password tidak sama';
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Konfirmasi Sandi',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey.shade400, size: 20),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: Colors.grey.shade400,
-                                size: 20,
-                              ),
-                              onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                            ),
-                          ),
                         ),
                         const SizedBox(height: 18),
 
@@ -373,7 +350,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               height: 24,
                               child: Checkbox(
                                 value: _agreeToTerms,
-                                activeColor: AppColors.primary,
+                                activeColor: theme.colorScheme.primary,
                                 checkColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                 onChanged: (val) {
@@ -385,11 +362,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Saya menyetujui Syarat & Ketentuan Desa Wisata',
                                 style: TextStyle(
-                                  color: AppColors.textMedium,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -400,10 +377,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 24),
 
                         // Register Button
-                        PremiumButton(
+                        PrimaryButton(
                           text: 'Daftar',
                           isLoading: _isLoading,
                           onPressed: _handleRegister,
+                          isFullWidth: true,
                         ),
                       ],
                     ),
@@ -421,17 +399,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(
                     'Sudah punya akun? ',
                     style: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.maybePop(context),
-                    child: const Text(
+                    child: Text(
                       'Masuk',
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
                         decoration: TextDecoration.underline,

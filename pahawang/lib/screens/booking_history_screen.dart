@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../utils/colors.dart';
-import '../utils/theme.dart';
+import '../theme/app_theme.dart';
+import '../widgets/cards/modern_card.dart';
 import '../providers/bookings_provider.dart';
 import 'booking_detail_screen.dart';
 
@@ -27,15 +27,15 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String status, ThemeData theme) {
     switch (status.toLowerCase()) {
       case 'paid':
       case 'completed':
       case 'confirmed':
-        return AppColors.success;
+        return theme.brightness == Brightness.light ? const Color(0xFF059669) : const Color(0xFF34D399);
       case 'pending':
       case 'waiting':
-        return AppColors.warning;
+        return theme.brightness == Brightness.light ? const Color(0xFFD97706) : const Color(0xFFFBBF24);
       case 'cancelled':
         return Colors.redAccent;
       default:
@@ -45,8 +45,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text('Riwayat Pemesanan', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -58,12 +59,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           },
         ),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryDark, AppColors.primary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
           ),
         ),
       ),
@@ -71,7 +68,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         builder: (context, provider, child) {
           if (provider.isLoading && provider.bookings.isEmpty) {
             return const Center(
-              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00897B))),
             );
           }
 
@@ -87,7 +84,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     Text(
                       provider.error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
@@ -107,9 +104,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                 children: [
                   const Text('🧾', style: TextStyle(fontSize: 48)),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Belum ada riwayat pemesanan.',
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -134,100 +131,96 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     ? '${DateFormat('dd MMM').format(booking.checkIn!)} - ${DateFormat('dd MMM yyyy').format(booking.checkOut!)}'
                     : DateFormat('dd MMM yyyy').format(booking.checkIn!);
 
-                return Container(
+                return ModernCard(
                   margin: const EdgeInsets.only(bottom: 14),
-                  decoration: AppTheme.cardDecoration,
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BookingDetailScreen(booking: booking),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          // Custom Icon Indicator
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: (isVilla ? AppColors.primary : AppColors.accent).withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(isVilla ? '🏡' : '🎒', style: const TextStyle(fontSize: 24)),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BookingDetailScreen(booking: booking),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        // Custom Icon Indicator
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: (isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 14),
-                          
-                          // Booking Details Info
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      booking.bookingCode,
-                                      style: const TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 11,
-                                        color: Colors.grey,
-                                      ),
+                          child: Text(isVilla ? '🏡' : '🎒', style: const TextStyle(fontSize: 24)),
+                        ),
+                        const SizedBox(width: 14),
+                        
+                        // Booking Details Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    booking.bookingCode,
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      color: Colors.grey,
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(booking.paymentStatus).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        booking.paymentStatus.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                          color: _getStatusColor(booking.paymentStatus),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  title,
-                                  style: AppTheme.heading3.copyWith(fontSize: 14),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.calendar_month_rounded, color: Colors.grey, size: 12),
-                                    const SizedBox(width: 4),
-                                    Text(dateStr, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _formatPrice(booking.totalPrice),
-                                  style: TextStyle(
-                                    color: isVilla ? AppColors.primary : AppColors.accent,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
                                   ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(booking.paymentStatus, theme).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      booking.paymentStatus.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: _getStatusColor(booking.paymentStatus, theme),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                title,
+                                style: theme.textTheme.titleSmall?.copyWith(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_month_rounded, color: theme.colorScheme.onSurfaceVariant, size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(dateStr, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _formatPrice(booking.totalPrice),
+                                style: TextStyle(
+                                  color: isVilla ? theme.colorScheme.primary : theme.colorScheme.secondary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
                                 ),
+                              ),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                );
+                  );
               },
             ),
           );

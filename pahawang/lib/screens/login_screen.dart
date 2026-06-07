@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../utils/colors.dart';
-import '../utils/theme.dart';
-import '../widgets/premium_card.dart';
+import '../theme/app_theme.dart';
+import '../widgets/buttons/primary_button.dart';
+import '../widgets/buttons/ghost_button.dart';
+import '../widgets/inputs/modern_text_field.dart';
+import '../widgets/cards/modern_card.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,8 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -85,13 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   height: 280,
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppColors.primaryGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.vertical(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(40),
                     ),
                   ),
@@ -117,22 +116,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          const Text(
+                          Text(
                             'Selamat Datang',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
+                            style: theme.textTheme.displaySmall?.copyWith(
                               color: Colors.white,
-                              letterSpacing: -0.6,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Masuk ke akun Desa Wisata Pulau Pahawang',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withOpacity(0.7),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withOpacity(0.85),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -157,9 +153,8 @@ class _LoginScreenState extends State<LoginScreen> {
               offset: const Offset(0, -30),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
+                child: ModernCard(
                   padding: const EdgeInsets.all(24),
-                  decoration: AppTheme.cardDecoration,
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -170,19 +165,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.danger.withOpacity(0.08),
+                              color: theme.colorScheme.errorContainer,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                              border: Border.all(color: theme.colorScheme.error.withOpacity(0.2)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 20),
+                                Icon(Icons.error_outline_rounded, color: theme.colorScheme.error, size: 20),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     _error!,
-                                    style: const TextStyle(
-                                      color: AppColors.danger,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.error,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -195,10 +190,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
 
                         // Email Field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Alamat Email',
+                          hint: 'nama@email.com',
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.email_outlined,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
                             if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
@@ -206,35 +203,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             }
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Alamat Email',
-                            prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade400, size: 20),
-                          ),
                         ),
                         const SizedBox(height: 16),
 
                         // Password Field
-                        TextFormField(
+                        ModernTextField(
+                          label: 'Kata Sandi',
+                          hint: '••••••••',
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                          prefixIcon: Icons.lock_outline_rounded,
+                          suffixIcon: _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          onSuffixIconPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                           validator: (value) {
                             if (value == null || value.isEmpty) return 'Password wajib diisi';
                             if (value.length < 6) return 'Password minimal 6 karakter';
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: 'Kata Sandi',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey.shade400, size: 20),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: Colors.grey.shade400,
-                                size: 20,
-                              ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
                         ),
 
                         // Forgot password text link
@@ -242,10 +227,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () => Navigator.of(context).pushNamed('/forgot_password'),
-                            child: const Text(
+                            child: Text(
                               'Lupa Password?',
                               style: TextStyle(
-                                color: AppColors.primary,
+                                color: theme.colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -255,55 +240,40 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
 
                         // Login Action Button
-                        PremiumButton(
+                        PrimaryButton(
                           text: 'Masuk',
                           isLoading: _isLoading,
                           onPressed: _login,
+                          isFullWidth: true,
                         ),
                         const SizedBox(height: 20),
 
                         // Elegant Divider
                         Row(
                           children: [
-                            Expanded(child: Divider(color: Colors.grey.shade200)),
+                            Expanded(child: Divider(color: theme.colorScheme.outline)),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 14),
                               child: Text(
                                 'atau lanjutkan dengan',
                                 style: TextStyle(
-                                  color: Colors.grey.shade400,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            Expanded(child: Divider(color: Colors.grey.shade200)),
+                            Expanded(child: Divider(color: theme.colorScheme.outline)),
                           ],
                         ),
                         const SizedBox(height: 20),
 
                         // Guest check-in button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton.icon(
-                            onPressed: () => Navigator.of(context).pushReplacementNamed('/'),
-                            icon: const Icon(Icons.explore_outlined, color: AppColors.primary, size: 20),
-                            label: const Text(
-                              'Lanjutkan sebagai Tamu',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.primary.withOpacity(0.3), width: 1.5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                          ),
+                        GhostButton(
+                          text: 'Lanjutkan sebagai Tamu',
+                          icon: Icons.explore_outlined,
+                          onPressed: () => Navigator.of(context).pushReplacementNamed('/'),
+                          isFullWidth: true,
                         ),
                       ],
                     ),
@@ -321,17 +291,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Belum punya akun? ',
                     style: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pushNamed('/register'),
-                    child: const Text(
+                    child: Text(
                       'Daftar Sekarang',
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
                         decoration: TextDecoration.underline,
